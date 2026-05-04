@@ -4,7 +4,7 @@ import {Linking, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import type {RootStackParamList} from '@navigation/types';
 import {buildVivaPaymentUri} from '@services/payment/vivaDeepLink';
 import {createId} from '@utils/id';
-import {usePaymentStore} from '@store/paymentStore';
+import {usePaymentStore} from '@store';
 import {theme, titleSection} from '@theme/kiosk';
 import {translate} from '../../stores/Localization/LocalizationStore';
 

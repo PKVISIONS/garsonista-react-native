@@ -18,8 +18,7 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {ROUTES} from '@constants/routes';
 import type {RootStackParamList} from '@navigation/types';
-import {useAuthStore} from '@store/authStore';
-import {useCartStore} from '@store/cartStore';
+import {useAuthStore, useCartStore} from '@store';
 import {kioskTopBrandLogo, shadowChoiceCard, theme} from '@theme/kiosk';
 import {kioskLogoImageUri, remoteUriSource} from '@utils/productImage';
 import {translate} from '../../stores/Localization/LocalizationStore';

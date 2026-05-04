@@ -28,9 +28,7 @@ import {ROUTES} from '@constants/routes';
 import type {RootStackParamList} from '@navigation/types';
 import type {OptionGroup, OptionValue, SelectedOption} from '@models';
 import {priceProductsForTable} from '@services/catalogService';
-import {useAuthStore} from '@store/authStore';
-import {useCartStore} from '@store/cartStore';
-import {useCatalogStore} from '@store/catalogStore';
+import {useAuthStore, useCartStore, useCatalogStore} from '@store';
 import {cardShadow, shadowBurgerCard, theme} from '@theme/kiosk';
 import {pickCatalogText} from '@utils/catalogText';
 import {

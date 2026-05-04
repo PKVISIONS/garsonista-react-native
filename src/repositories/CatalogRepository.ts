@@ -1,15 +1,17 @@
 import {Image} from 'react-native';
-import {fetchCatalogBootstrap, type CatalogBootstrap} from '@services/catalogService';
-import {useCatalogStore} from '@store/catalogStore';
-import {setCachedImageAspect} from '@utils/imageAspectCache';
+import type {ICatalogRepository} from '../core/domain/repositories/ICatalogRepository';
+import {
+  fetchCatalogBootstrap,
+  type CatalogBootstrap,
+} from '../services/catalogService';
+import {setCachedImageAspect} from '../utils/imageAspectCache';
 import {
   imagesBaseUrlFromWireRow,
   kioskLogoImageUri,
   kioskSplashImageUri,
   resolveProductImageUri,
-} from '@utils/productImage';
+} from '../utils/productImage';
 
-/** Parallel image downloads + dimension probes. */
 const PREFETCH_CONCURRENCY = 8;
 
 function collectAllImageUris(
@@ -18,7 +20,9 @@ function collectAllImageUris(
 ): string[] {
   const uris = new Set<string>();
   const pushUri = (uri: string | null | undefined) => {
-    if (uri) uris.add(uri);
+    if (uri) {
+      uris.add(uri);
+    }
   };
 
   pushUri(kioskSplashImageUri(wireRow));
@@ -67,21 +71,16 @@ async function prefetchAllUris(uris: string[]): Promise<void> {
   }
 }
 
-/**
- * After login / restore: fetch catalog, then warm all menu-related images.
- * Login UI should show a loader for the full duration of this call.
- */
-export async function prefetchAfterAuth(
-  wireRow: Record<string, unknown> | null,
-): Promise<void> {
-  let catalog: CatalogBootstrap;
-  try {
-    catalog = await fetchCatalogBootstrap();
-  } catch {
-    return;
-  }
-  useCatalogStore.getState().setBootstrap(catalog);
+export class CatalogRepository implements ICatalogRepository {
+  fetchBootstrap = (): Promise<CatalogBootstrap> => fetchCatalogBootstrap();
 
-  const uris = collectAllImageUris(catalog, wireRow);
-  await prefetchAllUris(uris);
+  warmMenuImages = (
+    catalog: CatalogBootstrap,
+    wireRow: Record<string, unknown> | null,
+  ): Promise<void> => {
+    const uris = collectAllImageUris(catalog, wireRow);
+    return prefetchAllUris(uris);
+  };
 }
+
+export const catalogRepository = new CatalogRepository();

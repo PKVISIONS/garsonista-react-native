@@ -3,7 +3,7 @@ import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {ROUTES} from '@constants/routes';
 import type {RootStackParamList} from '@navigation/types';
-import {useCartStore} from '@store/cartStore';
+import {useCartStore} from '@store';
 import {theme, titleHero} from '@theme/kiosk';
 import {translate} from '../../stores/Localization/LocalizationStore';
 

@@ -1,34 +1,29 @@
 const path = require('path');
-const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
+const { getDefaultConfig } = require('expo/metro-config');
 
-/**
- * Metro configuration
- * https://reactnative.dev/docs/metro
- *
- * `@theme/*` is not a real node_modules package; map it so the bundler resolves
- * before Babel transforms (see babel-plugin-module-resolver alias too).
- *
- * @type {import('@react-native/metro-config').MetroConfig}
- */
-const config = {
-  resolver: {
-    /**
-     * Metro parses `@theme/kiosk` as a single scoped package id (see `parseBareSpecifier`
-     * in metro-resolver). Map it to this folder so `package.json` `"main": "kiosk.ts"` applies.
-     */
-    extraNodeModules: {
-      '@theme/kiosk': path.resolve(__dirname, 'src/theme'),
-    },
-    resolveRequest: (context, moduleName, platform) => {
-      if (moduleName === '@theme/kiosk') {
-        return {
-          type: 'sourceFile',
-          filePath: path.resolve(__dirname, 'src/theme/kiosk.ts'),
-        };
-      }
-      return context.resolveRequest(context, moduleName, platform);
-    },
-  },
+const config = getDefaultConfig(__dirname);
+const resolveRequest = config.resolver.resolveRequest;
+
+config.resolver.extraNodeModules = {
+  ...config.resolver.extraNodeModules,
+  /**
+   * Metro parses `@theme/kiosk` as a scoped package id (see `parseBareSpecifier`
+   * in metro-resolver). Map it so `package.json` `"main": "kiosk.ts"` applies.
+   */
+  '@theme/kiosk': path.resolve(__dirname, 'src/theme'),
 };
 
-module.exports = mergeConfig(getDefaultConfig(__dirname), config);
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (moduleName === '@theme/kiosk') {
+    return {
+      type: 'sourceFile',
+      filePath: path.resolve(__dirname, 'src/theme/kiosk.ts'),
+    };
+  }
+  if (resolveRequest) {
+    return resolveRequest(context, moduleName, platform);
+  }
+  return context.resolveRequest(context, moduleName, platform);
+};
+
+module.exports = config;

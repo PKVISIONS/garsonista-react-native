@@ -1,4 +1,4 @@
-import {useAuthStore} from '@store/authStore';
+import {useAuthStore} from '@store';
 import type {FeatureFlags} from '@models/featureFlags';
 
 export function useFeatureFlag<K extends keyof FeatureFlags>(

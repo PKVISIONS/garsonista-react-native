@@ -4,7 +4,7 @@ import {Image, Platform, Pressable, StyleSheet, Text, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {ROUTES} from '@constants/routes';
 import type {RootStackParamList} from '@navigation/types';
-import {useAuthStore} from '@store/authStore';
+import {useAuthStore} from '@store';
 import {kioskTopBrandLogo, theme, shadowChoiceCard} from '@theme/kiosk';
 import {kioskLogoImageUri, remoteUriSource} from '@utils/productImage';
 import {translate} from '../../stores/Localization/LocalizationStore';

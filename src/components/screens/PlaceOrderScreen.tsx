@@ -14,7 +14,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {ROUTES} from '@constants/routes';
 import type {RootStackParamList} from '@navigation/types';
 import {splashBackgroundImage} from '@screens/StartScreen';
-import {useAuthStore} from '@store/authStore';
+import {useAuthStore} from '@store';
 import {kioskSplashImageUri, remoteUriSource} from '@utils/productImage';
 import {theme} from '@theme/kiosk';
 import {LanguageSelector} from '../LanguageSelector';

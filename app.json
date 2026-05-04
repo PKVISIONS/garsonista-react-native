@@ -1,4 +1,18 @@
 {
   "name": "GarsonistaKiosk",
-  "displayName": "GarsonistaKiosk"
+  "displayName": "Garsonista Kiosk",
+  "expo": {
+    "name": "Garsonista Kiosk",
+    "slug": "garsonista-kiosk",
+    "version": "0.0.1",
+    "scheme": "garsonistakiosk",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "org.reactjs.native.example.GarsonistaKiosk"
+    },
+    "android": {
+      "package": "com.garsonistakiosk"
+    }
+  }
 }

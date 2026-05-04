@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import {LanguageSelector} from '../LanguageSelector';
-import {useAuthStore} from '@store/authStore';
+import {useAuthStore} from '@store';
 import {theme, typeCaptionSm} from '@theme/kiosk';
 import {formatRequestError} from '@utils/errors';
 import {translate} from '../../stores/Localization/LocalizationStore';

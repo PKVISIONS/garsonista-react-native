@@ -13,7 +13,7 @@ import {useNavigation} from '@react-navigation/native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {ROUTES} from '@constants/routes';
 import type {RootStackParamList} from '@navigation/types';
-import {useAuthStore} from '@store/authStore';
+import {useAuthStore} from '@store';
 import {theme} from '@theme/kiosk';
 import {logRemoteImageDiagnostics} from '@utils/imageDebug';
 import {kioskSplashImageUri, remoteUriSource} from '@utils/productImage';

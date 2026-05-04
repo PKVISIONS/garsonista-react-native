@@ -151,6 +151,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-
-
-// initial commit
