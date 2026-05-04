@@ -1,0 +1,135 @@
+{
+  "kiosk": {
+    "startCta": "Κάνε την παραγγελία σου!",
+    "placeOrderA11y": "Κάνε την παραγγελία σου",
+    "lang": {
+      "elShort": "ΕΛ",
+      "enShort": "EN",
+      "deShort": "DE",
+      "a11y": "Γλώσσα",
+      "closePickerA11y": "Κλείσιμο επιλογής γλώσσας"
+    },
+    "nav": {
+      "tables": "Τραπέζια",
+      "order": "Παραγγελία",
+      "card": "Κάρτα",
+      "bank": "Τραπεζική",
+      "complete": "Ολοκληρώθηκε",
+      "cardFailed": "Αποτυχία κάρτας",
+      "tax": "Τιμολόγιο / ΑΦΜ",
+      "printer": "Εκτυπωτής"
+    },
+    "dining": {
+      "question": "Που θέλεις να φας;",
+      "dineIn": "Εντός εστιατορίου",
+      "takeaway": "Εκτός εστιατορίου"
+    },
+    "tables": {
+      "loadError": "Σφάλμα φόρτωσης",
+      "retry": "Δοκιμάστε ξανά",
+      "area": "Χώρος",
+      "table": "Τραπέζι",
+      "logout": "Αποσύνδεση"
+    },
+    "menu": {
+      "defaultCategory": "Μενού",
+      "emptyProducts": "Δεν υπάρχουν προϊόντα.",
+      "newOrderTitle": "Νέα παραγγελία",
+      "discardOrderMessage": "Να απορριφθεί η τρέχουσα παραγγελία;",
+      "alertCancel": "Ακύρωση",
+      "alertContinue": "Συνέχεια",
+      "viewOrder": "Προβολή παραγγελίας",
+      "startOver": "Ξεκίνα από την αρχή",
+      "startOverModalTitle": "Θέλετε να ξεκινήσετε από την αρχή;",
+      "startOverModalMessage": "Όλα τα είδη στο καλάθι σας θα χαθούν.",
+      "startOverModalYes": "Ναι, θέλω να ακυρώσω την παραγγελία μου.",
+      "startOverModalNo": "Όχι, δεν θέλω να ακυρώσω την παραγγελία μου.",
+      "startOverModalBackdropA11y": "Κλείσιμο"
+    },
+    "orderReview": {
+      "title": "Η παραγγελία σας",
+      "emptyCart": "Το καλάθι είναι άδειο",
+      "remove": "Αφαίρεση",
+      "total": "Σύνολο",
+      "complete": "Ολοκλήρωση παραγγελίας",
+      "fromStart": "Από την αρχή",
+      "backToMenu": "Πίσω στο μενού"
+    },
+    "product": {
+      "notFound": "Δεν βρέθηκε προϊόν",
+      "optionRequiredTitle": "Επιλογή",
+      "selectOption": "Παρακαλώ επιλέξτε: {{name}}",
+      "ok": "OK",
+      "cancel": "Ακύρωση",
+      "add": "Προσθήκη"
+    },
+    "pay": {
+      "prompt": "Πού θέλετε να πληρώσετε;",
+      "cash": "Πληρωμή στο ταμείο με μετρητά",
+      "card": "Πληρωμή εδώ με κάρτα",
+      "backMenu": "Επιστροφή στο μενού",
+      "cancel": "Ακύρωση",
+      "a11yCash": "Πληρωμή στο ταμείο με μετρητά",
+      "a11yCard": "Πληρωμή εδώ με κάρτα"
+    },
+    "receipt": {
+      "brand": "Duck Fried Chicken",
+      "thankYou": "Ευχαριστούμε!",
+      "preparing": "Ετοιμάζουμε την παραγγελία σας,\nπαρακαλούμε πάρτε την απόδειξή σας.",
+      "orderNumber": "Αριθμός παραγγελίας",
+      "dash": "—",
+      "printKioskName": "Garsonista Kiosk",
+      "printOrder": "Παραγγελία kiosk",
+      "printTable": "Τραπέζι {{id}}",
+      "printLine": "{{name}} x{{qty}} = {{total}}",
+      "garsonistaA11y": "Garsonista"
+    },
+    "orderComplete": {
+      "title": "Η παραγγελία καταχωρήθηκε.",
+      "newOrder": "Νέα παραγγελία"
+    },
+    "cardFailed": {
+      "title": "Η πληρωμή με κάρτα απέτυχε.",
+      "back": "Επιστροφή"
+    },
+    "paymentCard": {
+      "title": "Κάρτα Viva",
+      "sub": "Ανοίγει η εφαρμογή πληρωμών. Μετά την ολοκλήρωση επιστρέφετε στην εφαρμογή μέσω deep link.",
+      "amount": "Ποσό: {{amount}} €",
+      "open": "Άνοιγμα Viva",
+      "cancel": "Ακύρωση",
+      "vivaUnavailable": "Η εφαρμογή Viva δεν είναι διαθέσιμη"
+    },
+    "paymentBank": {
+      "title": "Τραπεζική / προκαταβολή",
+      "sub": "Σημειώστε την πληρωμή ως προκαταβολή και ολοκληρώστε χειροκίνητα στο POS όταν επιβεβαιωθεί.",
+      "complete": "Ολοκλήρωση"
+    },
+    "tax": {
+      "title": "Αναζήτηση ΑΦΜ (ΑΑΔΕ)",
+      "placeholder": "ΑΦΜ",
+      "search": "Αναζήτηση",
+      "result": "{{name}} — ΑΦΜ {{vat}}"
+    },
+    "printer": {
+      "defaultError": "Σφάλμα εκτυπωτή",
+      "hint": "Ελέγξτε Bluetooth/USB και δοκιμάστε ξανά στο target hardware (imin Swift 2 Pro).",
+      "ok": "OK"
+    },
+    "errors": {
+      "unauthorized": "Μη εξουσιοδοτημένη πρόσβαση.",
+      "timeout": "Λήξη χρόνου σύνδεσης.",
+      "network": "Δεν υπάρχει σύνδεση δικτύου ή ο server δεν απαντά. Ελέγξτε Wi‑Fi/δεδομένα και δοκιμάστε ξανά.",
+      "generic": "Σφάλμα σύνδεσης.",
+      "invalidServerJson": "Μη έγκυρη απάντηση διακομιστή",
+      "afmInvalidResponse": "Άκυρη απάντηση ΑΑΔΕ"
+    }
+  },
+  "loginScreen": {
+    "title": "Είσοδος",
+    "email": "Email",
+    "password": "Κωδικός",
+    "emailAndPasswordRequired": "Εισάγετε email και κωδικό.",
+    "loading": "Φόρτωση μενού και εικόνων…"
+  }
+}

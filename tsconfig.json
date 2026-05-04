@@ -1,0 +1,25 @@
+{
+  "extends": "@react-native/typescript-config",
+  "compilerOptions": {
+    "lib": ["ES2021", "DOM"],
+    "resolveJsonModule": true,
+    "types": ["jest"],
+    "baseUrl": ".",
+    "paths": {
+      "@models": ["src/models/index.ts"],
+      "@models/*": ["src/models/*"],
+      "@services": ["src/services/index.ts"],
+      "@services/*": ["src/services/*"],
+      "@store": ["src/components/store/index.ts"],
+      "@store/*": ["src/components/store/*"],
+      "@screens/*": ["src/components/screens/*"],
+      "@hooks/*": ["src/hooks/*"],
+      "@navigation/*": ["src/navigation/*"],
+      "@constants/*": ["src/constants/*"],
+      "@utils/*": ["src/utils/*"],
+      "@theme/*": ["src/theme/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["**/node_modules", "**/Pods"]
+}

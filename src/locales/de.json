@@ -1,0 +1,135 @@
+{
+  "kiosk": {
+    "startCta": "Jetzt bestellen!",
+    "placeOrderA11y": "Jetzt bestellen",
+    "lang": {
+      "elShort": "EL",
+      "enShort": "EN",
+      "deShort": "DE",
+      "a11y": "Sprache",
+      "closePickerA11y": "Sprachauswahl schließen"
+    },
+    "nav": {
+      "tables": "Tische",
+      "order": "Bestellung",
+      "card": "Karte",
+      "bank": "Überweisung",
+      "complete": "Abgeschlossen",
+      "cardFailed": "Karte fehlgeschlagen",
+      "tax": "Rechnung / USt-IdNr.",
+      "printer": "Drucker"
+    },
+    "dining": {
+      "question": "Wo möchten Sie essen?",
+      "dineIn": "Im Restaurant",
+      "takeaway": "Zum Mitnehmen"
+    },
+    "tables": {
+      "loadError": "Konnte nicht geladen werden",
+      "retry": "Erneut versuchen",
+      "area": "Bereich",
+      "table": "Tisch",
+      "logout": "Abmelden"
+    },
+    "menu": {
+      "defaultCategory": "Menü",
+      "emptyProducts": "Keine Produkte verfügbar.",
+      "newOrderTitle": "Neue Bestellung",
+      "discardOrderMessage": "Aktuelle Bestellung verwerfen?",
+      "alertCancel": "Abbrechen",
+      "alertContinue": "Weiter",
+      "viewOrder": "Bestellung ansehen",
+      "startOver": "Von vorne beginnen",
+      "startOverModalTitle": "Möchten Sie von vorne beginnen?",
+      "startOverModalMessage": "Der Inhalt Ihres Warenkorbs geht verloren.",
+      "startOverModalYes": "Ja, ich möchte meine Bestellung abbrechen.",
+      "startOverModalNo": "Nein, ich möchte meine Bestellung nicht abbrechen.",
+      "startOverModalBackdropA11y": "Schließen"
+    },
+    "orderReview": {
+      "title": "Ihre Bestellung",
+      "emptyCart": "Ihr Warenkorb ist leer",
+      "remove": "Entfernen",
+      "total": "Gesamt",
+      "complete": "Bestellung abschließen",
+      "fromStart": "Neu beginnen",
+      "backToMenu": "Zurück zur Speisekarte"
+    },
+    "product": {
+      "notFound": "Produkt nicht gefunden",
+      "optionRequiredTitle": "Auswahl",
+      "selectOption": "Bitte wählen: {{name}}",
+      "ok": "OK",
+      "cancel": "Abbrechen",
+      "add": "Hinzufügen"
+    },
+    "pay": {
+      "prompt": "Wie möchten Sie bezahlen?",
+      "cash": "An der Kasse mit Bargeld bezahlen",
+      "card": "Hier mit Karte bezahlen",
+      "backMenu": "Zurück zur Speisekarte",
+      "cancel": "Abbrechen",
+      "a11yCash": "An der Kasse mit Bargeld bezahlen",
+      "a11yCard": "Hier mit Karte bezahlen"
+    },
+    "receipt": {
+      "brand": "Duck Fried Chicken",
+      "thankYou": "Vielen Dank!",
+      "preparing": "Wir bereiten Ihre Bestellung vor,\nbitte nehmen Sie Ihren Bon.",
+      "orderNumber": "Bestellnummer",
+      "dash": "—",
+      "printKioskName": "Garsonista Kiosk",
+      "printOrder": "Kiosk-Bestellung",
+      "printTable": "Tisch {{id}}",
+      "printLine": "{{name}} x{{qty}} = {{total}}",
+      "garsonistaA11y": "Garsonista"
+    },
+    "orderComplete": {
+      "title": "Ihre Bestellung wurde übermittelt.",
+      "newOrder": "Neue Bestellung"
+    },
+    "cardFailed": {
+      "title": "Kartenzahlung fehlgeschlagen.",
+      "back": "Zurück"
+    },
+    "paymentCard": {
+      "title": "Viva Karte",
+      "sub": "Die Zahlungs-App wird geöffnet. Kehren Sie danach über den Deep-Link zu dieser App zurück.",
+      "amount": "Betrag: {{amount}} €",
+      "open": "Viva öffnen",
+      "cancel": "Abbrechen",
+      "vivaUnavailable": "Viva-App nicht verfügbar"
+    },
+    "paymentBank": {
+      "title": "Bank / Vorauszahlung",
+      "sub": "Als Vorauszahlung erfassen und manuell am POS abschließen, sobald bestätigt.",
+      "complete": "Abschließen"
+    },
+    "tax": {
+      "title": "USt-Nachschlag (AADE)",
+      "placeholder": "USt-IdNr.",
+      "search": "Suchen",
+      "result": "{{name}} — USt {{vat}}"
+    },
+    "printer": {
+      "defaultError": "Druckerfehler",
+      "hint": "Bluetooth/USB prüfen und auf dem Zielgerät (imin Swift 2 Pro) erneut versuchen.",
+      "ok": "OK"
+    },
+    "errors": {
+      "unauthorized": "Nicht autorisiert.",
+      "timeout": "Verbindung zeitüberschreitung.",
+      "network": "Kein Netzwerk oder Server antwortet nicht. WLAN/Daten prüfen und erneut versuchen.",
+      "generic": "Verbindungsfehler.",
+      "invalidServerJson": "Ungültige Serverantwort",
+      "afmInvalidResponse": "Ungültige Antwort der Steuerbehörde"
+    }
+  },
+  "loginScreen": {
+    "title": "Anmelden",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "emailAndPasswordRequired": "Bitte E-Mail und Passwort eingeben.",
+    "loading": "Menü und Bilder werden geladen…"
+  }
+}

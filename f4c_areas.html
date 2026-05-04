@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<head>
+<meta name="facebook-domain-verification" content="5dq88tgf5wgedh42av3rwhuj4r3t2n" />
+
+<!-- Facebook Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '369508941301546');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=369508941301546&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Facebook Pixel Code -->
+
+	<script src="https://food4cook.gr/libs/js/jquery-2.2.3.min.js"></script>
+	<script src="https://food4cook.gr/libs/js/jquery.inputmask.bundle.js"></script>
+	<script src="https://food4cook.gr/libs/js/jquery-confirm.js"></script>
+	<script src="https://food4cook.gr/libs/js/config.js"></script>
+	<script src="https://food4cook.gr/libs/js/clipboard.min.js"></script>
+	<script src="https://food4cook.gr/libs/js/jquery.visible.min.js"></script>
+	<script src="https://food4cook.gr/libs/js/jquery-cookies.js"></script>
+	<script src="https://food4cook.gr/libs/js/simpledrag.js"></script>
+	<link rel="stylesheet" href="https://food4cook.gr/libs/css/jquery-confirm.css">
+	<link rel="stylesheet" href="https://food4cook.gr/libs/css/datepicker.css">
+	<link rel="stylesheet" href="https://food4cook.gr/libs/css/w3.css">
+	<script src="https://food4cook.gr/libs/js/datepicker.js"></script>
+	<script src="https://food4cook.gr/libs/js/jquery.lazy.min.js"></script>
+	
+	<link rel="alternate" href="android-app://gr.food4cook.online_delivery/https/food4cook.gr/main/areas/" />
+
+	<meta http-equiv="Content-Language" content="el">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=0.9 maximum-scale=0.9" id="myViewport">
+	
+		<meta name="robots" content="index, follow">
+		
+	<meta http-equiv="cache-control" content="no-store, no-cache, must-revalidate"/>
+    <meta http-equiv="Pragma" content="no-store, no-cache"/>
+    <meta http-equiv="Expires" content="0"/>
+	<meta itemprop="url" content="https://food4cook.gr/main/areas/"/>
+	<meta name="theme-color" content="rgba(0, 0, 0, 1.0)" />
+	
+	<style>
+	.apage-image{
+		background-image: url("https://food4cook.gr/images/steak.jpg") !important;
+	}
+	</style>
+	<TITLE>Περιοχές καταστημάτων - food4cook online delivery</TITLE>				<meta name="description" itemprop="description" content="Περιοχές καταστημάτων online delivery. Ανακάλυψε όλα τα καταστήματα ανά περιοχή στο food4cook.gr και παράγγειλε online">
+				
+				<meta property="og:title" itemprop="name" content="Περιοχές καταστημάτων">
+				<meta property="og:url" content="https://food4cook.gr/main/areas/">
+				<meta property="og:site_name" content="food4cook">
+				<meta property="og:type" content="website">
+				<meta property="og:description" content="Περιοχές καταστημάτων online delivery. Ανακάλυψε όλα τα καταστήματα ανά περιοχή στο food4cook.gr και παράγγειλε online">
+
+				<meta name="twitter:card" content="summary_large_image">
+				<meta name="twitter:site" content="@food4cook">
+				<meta name="twitter:creator" content="@food4cook">
+				<meta name="twitter:domain" content="food4cook.gr">
+				<meta name="twitter:title" content="Περιοχές καταστημάτων">
+				<meta name="twitter:description" content="Περιοχές καταστημάτων online delivery. Ανακάλυψε όλα τα καταστήματα ανά περιοχή στο food4cook.gr και παράγγειλε online">
+
+				<meta property="og:image" itemprop="image" content="https://food4cook.gr/images/leaf2_black.png">
+				<meta name="twitter:image" content="https://food4cook.gr/images/leaf2_black.png">
+					
+	<link href="https://food4cook.gr/favicon.ico"rel="SHORTCUT ICON">
+	<link rel="stylesheet"  href="https://food4cook.gr/css/util.css">
+	<link rel="stylesheet"  href="https://food4cook.gr/css/main.css">
+	
+	<script>
+	  $(function() {
+		$(".datepicker" ).datepicker();
+		$(".datepicker").datepicker( "option", "dateFormat", "yy-mm-dd" );
+	  });
+	  
+	$(function() {
+		$('input.tony_time').inputmask(
+			"hh:mm:ss", {
+			placeholder: "HH:MM:SS", 
+			insertMode: true, 
+			showMaskOnHover: true,
+			hourFormat: 24
+		});
+	});
+	
+	var range = document.createRange();
+	function html2clipboard(html, el) {
+		var tmpEl;
+		if (typeof el !== "undefined") {
+			// you may want some specific styling for your content - then provide a custom DOM node with classes, inline styles or whatever you want
+			tmpEl = el;
+		} else {
+			// else we'll just create one
+			tmpEl = document.createElement("div");
+
+			// since we remove the element immedeately we'd actually not have to style it - but IE 11 prompts us to confirm the clipboard interaction and until you click the confirm button, the element would show. so: still extra stuff for IE, as usual.
+			tmpEl.style.opacity = 0;
+			tmpEl.style.position = "absolute";
+			tmpEl.style.pointerEvents = "none";
+			tmpEl.style.zIndex = -1;
+		}
+
+		// fill it with your HTML
+		tmpEl.innerText = html;
+
+		// append the temporary node to the DOM
+		document.body.appendChild(tmpEl);
+
+		// select the newly added node
+		range.selectNode(tmpEl);
+		window.getSelection().addRange(range);
+
+		// copy
+		document.execCommand("copy");
+
+		// and remove the element immediately
+		document.body.removeChild(tmpEl);
+	}
+	</script>
+</head>
+	<script>
+	var cc = 0;
+	if(cc > 0 && cc <= 99){
+		$("#menu_notif_text").html(cc +" Ειδοποιήσεις");
+		$("#notif_sign").html(cc);
+		$("#notif_sign").show();
+	}
+	else if(cc > 99){
+		$("#menu_notif_text").html("99+ Ειδοποιήσεις");
+		$("#notif_sign").html("99+");
+		$("#notif_sign").show();
+	}
+	else{
+		$("#menu_notif_text").html("Ειδοποιήσεις");
+		$("#notif_sign").html("0");
+		$("#notif_sign").hide();
+	}
+	
+	/*function LoopForever() {
+		var productData2 = new FormData();
+		
+		productData2.append("ajax" , "true");
+		productData2.append("select" , "count");
+		
+		$.ajax({
+			url: root + "main/notifications/",
+			type: "POST",
+			data: productData2,
+			cache: false,
+			processData: false,
+			contentType: false,
+			success: function(data){
+					//console.log(data);
+					var obj = JSON.parse(data);
+					if(obj.length > 0 && obj[0].aa > 0 && obj[0].aa <= 99){
+						$("#menu_notif_text").html(obj[0].aa+" Ειδοποιήσεις");
+						$("#notif_sign").html(obj[0].aa);
+						$("#notif_sign").show();
+					}
+					else if(obj.length > 0 && obj[0].aa > 99){
+						$("#menu_notif_text").html("99+ Ειδοποιήσεις");
+						$("#notif_sign").html("99+");
+						$("#notif_sign").show();
+					}
+					else{
+						$("#menu_notif_text").html("Ειδοποιήσεις");
+						$("#notif_sign").html("0");
+						$("#notif_sign").hide();
+					}
+			}
+		});
+	}
+
+	var interval = self.setInterval(function(){LoopForever()},3000);*/
+	</script>
+	<style>
+.from_main{
+	color : #fff
+}
+
+.menu-right-bar{
+	position: fixed;
+    background-color: #fff;
+   /* min-width: 450px;*/
+    width : 450px;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 1;
+    overflow: auto;
+    overflow-x: hidden;
+    display: none;
+	border-left : 1px solid #ebebeb;
+	border-right : 1px solid #ebebeb
+}
+
+@media (max-width: 550px){
+	.menu-right-bar{
+		width : 100%;
+	}
+}
+
+#top-bar{
+	z-index : 2;
+	display: table;
+}
+
+.menu-right-bar-con{
+	padding : 15px 15px; 
+	background-color : #fff;
+}
+
+.image_con{
+	text-align: center;
+	vertical-align: middle;
+	line-height: 42px;
+	float : left;
+}
+
+.image_con2{
+	text-align: center;
+	vertical-align: middle;
+	line-height: 22px;
+	float : left;
+}
+
+.image_con3{
+	text-align: center;
+	vertical-align: middle;
+	line-height: 44px;
+	float : left;
+}
+
+#notif_sign{
+	position : absolute;
+	height : 30px;
+	width : 30px;
+	border-radius : 15px;
+	right : 110px;
+	top : 40px;
+	background-color : #3ac99e;
+	text-align : center;
+	line-height : 30px;
+	font-size : 13px;
+	color : white;
+	display : none;
+}
+
+.ac1{
+	margin-right : 0px;
+	font-size : 20px;
+	padding : 25px
+}
+
+.ac2{
+	margin-right : 20px;
+	/*border : 1px solid #e0e0e0;
+	border-radius : 15px;
+	background-color : #ebebeb;*/
+	font-size : 20px;
+	padding : 25px
+}
+
+body{
+	font-family: 'Ubuntu', sans-serif;
+}
+</style>
+
+<script defer type="text/javascript" src="https://food4cook.gr/libs/js/head.js"></script>
+<link href="https://fonts.googleapis.com/css?family=Ubuntu&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.9.0/css/all.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.9.0/css/v4-shims.css">
+
+<body bgcolor="#efefef">
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0RNTFSXRZE"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-0RNTFSXRZE');
+</script>
+<div style="width : 100%; background-color : #202020">
+	<div style="max-width : 1280px; margin : 0 auto;">
+	
+	<div id="menu-right-bar-id" class="menu-right-bar must_close" style="z-index : 2">
+		<div style='padding : 24px 0px; overflow: auto; text-align : left; float : left'>
+						<img class="w3-animate-top" src='https://food4cook.gr/images/Garsonista-new-logo.png' style='width : 160px; margin-left : 15px; border-radius : 5px'>
+					</div>
+		<div style='padding : 9px 5px; overflow: auto; text-align : right; float : right'>
+			<a href=# class=menu_link>
+			<i class="fas fa-times ac2"></i>
+			</a>
+		</div>
+		<div class="menu-right-bar-con">
+			
+					
+			<div>
+				<div class="w3-section" style="width:100%">
+							
+			<!--link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"-->
+			<script src="https://www.google.com/recaptcha/api.js?render=6LfDapUbAAAAAOByLQJBW4xQ7VHvjFHj3U_cNgbg"></script>
+			
+			<body style="background-color : #efefef">
+						
+			<div id="id01" class="w3-modal open_div">
+			<div class="w3-modal-content w3-card-4 w3-animate-zoom" style="max-width:600px">
+
+			  <div class="w3-center"><br>
+				<span onclick="document.getElementById('id01').style.display='none'" class="w3-button w3-xlarge w3-hover-red w3-display-topright" title="Close Modal">&times;</span>
+			  </div>
+
+			  <form id="signup_form" class="w3-container" action="/signup.php">
+				<div class="w3-section">
+				  <label><b>Email</b></label>
+				  <input class="w3-input w3-border w3-margin-bottom" type="email" placeholder="Βάλτε email" id=semail name="email" required>
+				  <label><b>Κωδικός</b></label>
+				  <input class="w3-input w3-border w3-margin-bottom" type="password" placeholder="Βάλτε κωδικό" name="psw" required>
+				  <label><b>Κωδικός</b></label>
+				  <input class="w3-input w3-border w3-margin-bottom" type="password" placeholder="Βάλτε τον κωδικό σας ξανά" name="psw2" required>
+				  <label><b>Όνομα</b></label>
+				  <input class="w3-input w3-border w3-margin-bottom" type="text" placeholder="Βάλτε όνομα" name="name" required>
+				  <label><b>Τηλέφωνο</b></label>
+				  <input class="w3-input w3-border w3-margin-bottom" type="text" placeholder="Βάλτε Τηλέφωνο" name="phone" required>
+				  <label><b>Μήνυμα προς food4cook (προαιρετικό)</b></label>
+				  <textarea placeholder="Γράψτε το μήνυμα που θέλετε να μας αφήσετε" name="new-message" style="resize: none; padding : 10px 10px; width : 100%; height : 100px;font-size : 13px; font-weight: normal;border : 1px solid #aaa  !important; "></textarea>
+				  <!--label><b>ΑΦΜ</b></label>
+				  <input class="w3-input w3-border w3-margin-bottom" type="text" placeholder="Βάλτε το ΑΦΜ σας" name="afm" required-->
+				  
+				  <!--div class="g-recaptcha" data-sitekey="6Ldn07sZAAAAAHQtEG6iFI5LJOI5o1sJ9udUU2BD"></div>
+				  <span id=captcha_error style="color : red;"></span-->
+				  <a id="open-id02-store" style="font-size : 13px; cursor : pointer; width : 100%">Με την εγγραφή σας συμφωνείτε με τους όρους και προϋποθέσεις χρήσης της εφαρμογής.</a>
+				  <script>
+				  $("#open-id02-store").click(function(e){
+				  $("#iframe-id02-store").attr("src","https://food4cook.gr/food4cook_oroi_store2.pdf");
+				  document.getElementById('id02-store').style.display='block'
+				  });
+				  </script>
+				  
+				  <div class="container-login100-form-btn m-t-32">
+						<button  id=signup class="login100-form-btn" style="font-family: 'Ubuntu', sans-serif !important; text-align : center; width : 280px;">
+							Εγγραφη και επικοινωνία&nbsp; <center><i style="display : none;" id="load_afrotem_ico" class="fa fa-circle-o-notch fa-spin fa-1x fa-fw"></i></center>
+						</button>
+					</div>
+				  
+			
+				</div>
+			  </form>
+
+			  <div class="w3-container w3-border-top w3-padding-16 w3-light-grey">
+				<button onclick="document.getElementById('id01').style.display='none'" type="button" class="w3-button w3-red">Άκυρο</button>
+			  </div>
+
+			</div>
+		  </div>
+		  
+		  <div id="id03" class="w3-modal open_div" style="z-index : 3">
+			<div class="w3-modal-content w3-card-4 w3-animate-zoom" style="max-width:600px">
+
+			  <div class="w3-center"><br>
+				<span onclick="document.getElementById('id03').style.display='none'" class="w3-button w3-xlarge w3-hover-red w3-display-topright" title="Close Modal">&times;</span>
+			  </div>
+
+			  <form id="signup_form2" class="w3-container" action="/signup.php">
+				<div class="w3-section">
+				  <label><b>Email</b></label>
+				  <input class="w3-input w3-border w3-margin-bottom" type="email" placeholder="Βάλτε το email σας" id=semail2 name="uemail" required>
+				  <label><b>Κωδικός</b></label>
+				  <input class="w3-input w3-border w3-margin-bottom" type="password" placeholder="Βάλτε έναν κωδικό πρόσβασης" name="upsw" required>
+				  <!--label><b>Κωδικός</b></label>
+				  <input class="w3-input w3-border w3-margin-bottom" type="password" placeholder="Βάλτε τον κωδικό σας ξανά" name="upsw2" required-->
+				  <label><b>Όνομα/επώνυμο</b></label>
+				  <input class="w3-input w3-border w3-margin-bottom" type="text" placeholder="Βάλτε το όνομα σας" name="uname" required>
+				  <!--label><b>Τηλέφωνο</b></label>
+				  <input class="w3-input w3-border w3-margin-bottom" type="text" placeholder="Βάλτε Τηλέφωνο" name="uphone" required-->
+				  
+				  <!--div class="g-recaptcha" data-sitekey="6Ldn07sZAAAAAHQtEG6iFI5LJOI5o1sJ9udUU2BD"></div>
+				  <span id=captcha_error2 style="color : red;"></span-->
+				  <a onclick="document.getElementById('id02').style.display='block'" style="font-size : 13px; cursor : pointer; width : 100%">Με την εγγραφή σας συμφωνείτε με τους όρους και προϋποθέσεις χρήσης της εφαρμογής.</a>
+				  
+				  <div class="container-login100-form-btn m-t-32">
+						<button  id=signup2 class="login100-form-btn" style="font-family: 'Ubuntu', sans-serif !important; text-align : center; width : 280px;">
+							Εγγραφη&nbsp; <center><i style="display : none;" id="load_afrotem_ico2" class="fa fa-circle-o-notch fa-spin fa-1x fa-fw"></i></center>
+						</button>
+					</div>
+				  
+			
+				</div>
+			  </form>
+
+			  <div class="w3-container w3-border-top w3-padding-16 w3-light-grey">
+				<button onclick="document.getElementById('id03').style.display='none'" type="button" class="w3-button w3-red">Άκυρο</button>
+			  </div>
+
+			</div>
+		  </div>
+		  
+		  <div id="id02-store" class="w3-modal open_div">
+			<div class="w3-modal-content w3-card-4 w3-animate-zoom" style="max-width:800px; margin-top : -50px">
+
+			  <div class="w3-center"><br>
+				<span onclick="document.getElementById('id02-store').style.display='none'" class="w3-button w3-xlarge w3-hover-red w3-display-topright" title="Close Modal">&times;</span>
+				<h3>Όροι και προϋποθέσεις συνεργασίας</h3>
+				<h5><a href="https://food4cook.gr/food4cook_oroi_store2.pdf">Λήψη Όρων και προϋποθέσεων συνεργασίας</a><h5>
+			  </div>
+			  
+			  <div class="w3-container w3-margin" style="background-color : #fff;">
+				<iframe id="iframe-id02-store" style="width : 100%" height=600></iframe>
+			  </div>
+			</div>
+		  </div>
+		  
+		  <div id="id02" class="w3-modal open_div" style="z-index : 3">
+			<div class="w3-modal-content w3-card-4 w3-animate-zoom" style="max-width:800px; margin-top : -50px">
+
+			  <div class="w3-center"><br>
+				<span onclick="document.getElementById('id02').style.display='none'" class="w3-button w3-xlarge w3-hover-red w3-display-topright" title="Close Modal">&times;</span>
+				<h3>Όροι και προϋποθέσεις χρήσης</h3>
+			  </div>
+			  
+			  <div class="w3-container w3-margin" style="background-color : #fff;">
+				<div class="w3-container w3-margin" style="font-size : 13px">
+				</div>
+				<h4>1. Προοίμιο - Εισαγωγικά Στοιχεία</h4>
+				<div class="w3-container w3-margin" style="font-size : 13px">
+				Με το παρόν καθορίζονται οι όροι χρήσης των υπηρεσιών που παρέχονται μέσω του προγράμματος-ιστοσελίδας "food4cook.gr" (εφ’ εξής «Ιστοσελίδα») από την εταιρία Πέγιος Αντώνιος Δημήτριος με ΑΦΜ 145382371 και Διακριτό Τίτλο Datapp (εφ’ εξής «Αντισυμβαλλόμενο»).
+				</div>
+				<div class="w3-container w3-margin" style="font-size : 13px">
+				Ως νόμιμη χρήση των παρεχομένων υπηρεσιών νοείται η ανεπιφύλακτη αποδοχή των όρων του παρόντος και η συμμόρφωσή σας κατά τη χρήση των υπηρεσιών αυτών με την κείμενη ελληνική νομοθεσία που διέπει τις εν λόγω συναλλαγές. Η αποδοχή των όρων του παρόντος σε καμία περίπτωση δεν συνιστά σύναψη οποιασδήποτε μορφής ή σχέσης συνεταιρισμού με τον Αντισυμβαλλόμενο.
+				</div>
+				
+				<div class="w3-container w3-margin" style="font-size : 13px">
+				</div>
+				<h4>2. Πρόσβαση και χρήση της ιστοσελίδας</h4>
+				<div class="w3-container w3-margin" style="font-size : 13px">
+				Προϋπόθεση για τη συμμετοχή των χρηστών στην Ιστοσελίδα αποτελεί η αποδοχή των παρόντων όρων χρήσης, οι οποίοι έχουν οριστεί σύμφωνα με την ισχύουσα ελληνική νομοθεσία.
+				</div>
+				<div class="w3-container w3-margin" style="font-size : 13px">
+				Δεν επιτρέπεται η χρήση οποιασδήποτε μεθόδου παρακολούθησης της Ιστοσελίδας ή αντιγραφής μέρους ή του συνόλου του μηχανισμού λειτουργίας της χωρίς την προηγούμενη έγγραφη άδεια του Αντισυμβαλλόμενου. Απαγορεύεται ιδίως η χρήση οποιουδήποτε προγράμματος ή άλλης μεθόδου παρέμβασης στον μηχανισμό λειτουργίας της Ιστοσελίδας ή σε οποιαδήποτε καταχώρηση που περιέχεται σε αυτήν.
+				</div>
+				<div class="w3-container w3-margin" style="font-size : 13px">
+				Απαγορεύεται η αντιγραφή, τροποποίηση, παράφραση ή αναδημοσίευση της ιστοσελίδας, χωρίς την προηγούμενη έγγραφη άδεια του Αντισυμβαλλόμενου.  Σε κάθε περίπτωση ο Αντισυμβαλλόμενος διατηρεί το δικαίωμα αλλαγής των όρων προστασίας των προσωπικών δεδομένων, εντός των πλαισίων της ισχύουσας νομοθεσίας.
+				</div>
+				
+				<div class="w3-container w3-margin" style="font-size : 13px">
+				</div>
+				<h4>3. Τελικές Διατάξεις</h4>
+				<div class="w3-container w3-margin" style="font-size : 13px">
+				Τα πνευματικά δικαιώματα της Ιστοσελίδας ανήκουν στον Αντισυμβαλλόμενο. Απαγορεύεται η αναδημοσίευση, η αναπαραγωγή, ολική, μερική ή περιληπτική ή κατά παράφραση ή διασκευή της Ιστοσελίδας με οποιοδήποτε τρόπο ηλεκτρονικό, μηχανικό, ή φωτοτυπικό, χωρίς προηγούμενη έγγραφη άδεια.
+				</div>
+				<div class="w3-container w3-margin" style="font-size : 13px">
+				Σε καμιά περίπτωση ο Αντισυμβαλλόμενος, οι νόμιμοι εκπρόσωποί του ή οι υπάλληλοι του δεν ευθύνονται για οποιαδήποτε ζημία, θετική ή αποθετική, που τυχόν θα υποστούν τα μέλη του συνεπεία της χρήσης των παρεχομένων υπηρεσιών του, οφειλόμενη άμεσα ή έμμεσα σε ενέργειες ή παραλείψεις τους.
+				</div>
+				<div class="w3-container w3-margin" style="font-size : 13px">
+				Σε περίπτωση που ανακύψει οποιαδήποτε τυχόν διαφορά μεταξύ των μελών της Ιστοσελίδας, αφορώσα τη χρήση των υπηρεσιών κατά παράβαση των όρων του παρόντος, συμφωνείται ότι ο Αντισυμβαλλόμενος, το προσωπικό και οι συνεργάτες του ουδεμία ευθύνη φέρουν και ότι ο ζημιωθείς χρήστης φέρει αποκλειστικά το βάρος όπως απαιτήσει έναντι του τρίτου την αποκατάσταση οποιασδήποτε τυχόν ζημίας του.
+				</div>
+				<div class="w3-container w3-margin" style="font-size : 13px">
+				Σε κάθε περίπτωση, για οποιαδήποτε διαφορά προκύψει μεταξύ του Αντισυμβαλλόμενου και των των μελών της Ιστοσελίδας, αρμόδια είναι τα Δικαστήρια της περιφερειακής ενότητας Έδεσσας (Ειρηνοδικείο Σκύδρας, Μονομελές Πρωτοδικείο Έδεσσας κ.λπ.).
+				</div>
+			  </div>
+			</div>
+		  </div>
+
+			
+			<form style="display:none" id="myForm2" action="/login/auth/" method="post">
+				<input type=text name="redirect" value="areas/" />
+				<input id=myForm2user type="text" name="user" value="" />
+				<input id=myForm2p type="password" name="p" value="" />
+			</form>
+
+		  <script>
+		  
+			$(document).on("click","#signup2",function(e){
+				e.preventDefault();
+				/*var v = grecaptcha.getResponse(1);
+				if(v.length == 0){
+					$.confirm({
+						title: 'Μήνυμα',
+						content: "Πρέπει να κάνετε κλικ στο πλαίσιο <<δεν είμαι ρομποτ>> αρχικά.",
+						buttons: {
+							confirm: function () {
+								return;
+							},
+						}
+					});
+					return;
+				}*/
+				
+				
+				$("#load_afrotem_ico2").show();
+				grecaptcha.ready(function() {
+				  grecaptcha.execute('6LfDapUbAAAAAOByLQJBW4xQ7VHvjFHj3U_cNgbg', {action: 'submit'}).then(function(token) {
+					var productData = new FormData();
+					productData.append("g-recaptcha-response" , token);
+					productData.append("email",$("input[id=semail2]").val());
+					productData.append("psw",$("input[name=upsw]").val());
+					//productData.append("psw2",$("input[name=upsw2]").val());
+					//productData.append("phone",$("input[name=uphone]").val());
+					productData.append("name",$("input[name=uname]").val());
+					
+					$.ajax({
+						url: "https://food4cook.gr/signup2.php",
+						type: "POST",
+						data: productData,
+						processData: false,
+						contentType: false,
+						success: function(data){
+							console.log(data);
+							$("#load_afrotem_ico2").hide();
+							if(data.trim() == "email") {
+								$.confirm({
+									title: 'Μήνυμα',
+									content: "Πρέπει να συμπληρώσετε το πεδίο email!",
+									buttons: {
+										confirm: function () {
+											$("input[id=semail2]").focus();
+										},
+									}
+								});
+							}
+							else if(data.trim() == "mail") {
+								$.confirm({
+									title: 'Μήνυμα',
+									content: "Το email που δώσατε δεν είναι σωστό!",
+									buttons: {
+										confirm: function () {
+											$("input[id=semail2]").focus();
+										},
+									}
+								});
+							}
+							else if(data.trim() == "psw") {
+								$.confirm({
+									title: 'Μήνυμα',
+									content: "Πρέπει να συμπληρώσετε το πεδίο κωδικός!",
+									buttons: {
+										confirm: function () {
+											$("input[name=upsw]").focus();
+										},
+									}
+								});
+							}
+							else if(data.trim() == "psw2") {
+								$.confirm({
+									title: 'Μήνυμα',
+									content: "Πρέπει να επαναδιατυπώσετε τον κωδικό σας!",
+									buttons: {
+										confirm: function () {
+											$("input[name=upsw2]").focus();
+										},
+									}
+								});
+							}
+							else if(data.trim() == "pswdif") {
+								$.confirm({
+									title: 'Μήνυμα',
+									content: "Η επαναδιατύπωση του κωδικού δεν ταιριάζει με τον κωδικό που δώσατε",
+									buttons: {
+										confirm: function () {
+											$("input[name=upsw2]").focus();
+										},
+									}
+								});
+							}
+							else if(data.trim() == "name") {
+								$.confirm({
+									title: 'Μήνυμα',
+									content: "Πρέπει να συμπληρώσετε το πεδίο Όνομα",
+									buttons: {
+										confirm: function () {
+											$("input[name=uname]").focus();
+										},
+									}
+								});
+							}
+							else if(data.trim() == "phone") {
+								$.confirm({
+									title: 'Μήνυμα',
+									content: "Πρέπει να συμπληρώσετε το πεδίο Τηλέφωνο και να βάλετε ένα σωστό τηλέφωνο",
+									buttons: {
+										confirm: function () {
+											$("input[name=uphone]").focus();
+										},
+									}
+								});
+							}
+							else if(data.trim() == "captcha") {
+								$.confirm({
+									title: 'Μήνυμα',
+									content: "Κάτι πήγε στραβά με την επικύρωση σας ότι δεν είστε ρομποτ.",
+									buttons: {
+										confirm: function () {
+											//grecaptcha.reset(1);
+										},
+									}
+								});
+							}
+							else if(data.trim() == "mailexist") {
+								$.confirm({
+									title: 'Μήνυμα',
+									content: "Το email που δώσατε χρησιμοποιείται από άλλο χρήστη! Δώστε ένα διαφορετικό email!",
+									buttons: {
+										confirm: function () {
+											$("input[id=semail2]").focus();
+										},
+									}
+								});
+							}
+							else if(data.trim() == "ok") {
+								$("#myForm2user").val($("input[id=semail2]").val());
+								$("#myForm2p").val($("input[name=upsw]").val());
+								$.confirm({
+									title: 'Μήνυμα',
+									content: "Η εγγραφή σου ολοκληρώθηκε με επιτυχία! Πάτησε Confirm για να εισέλθεις!",
+									buttons: {
+										confirm: function () {
+											document.getElementById("myForm2").submit();
+										},
+									}
+								});
+							}
+						}
+					});
+				  });
+				});
+			});
+			
+			$("#signup").click(function(e){
+				e.preventDefault();
+				/*var v = grecaptcha.getResponse();
+				if(v.length == 0){
+					$.confirm({
+						title: 'Μήνυμα',
+						content: "Πρέπει να κάνετε κλικ στο πλαίσιο <<δεν είμαι ρομποτ>> αρχικά.",
+						buttons: {
+							confirm: function () {
+								return;
+							},
+						}
+					});
+					return;
+				}*/
+				
+				
+				$("#load_afrotem_ico").show();
+				grecaptcha.ready(function() {
+				  grecaptcha.execute('6LfDapUbAAAAAOByLQJBW4xQ7VHvjFHj3U_cNgbg', {action: 'submit'}).then(function(token) {
+					var productData = new FormData();
+					productData.append("g-recaptcha-response" , token);
+					productData.append("email",$("input[id=semail]").val());
+					productData.append("psw",$("input[name=psw]").val());
+					productData.append("psw2",$("input[name=psw2]").val());
+					productData.append("phone",$("input[name=phone]").val());
+					productData.append("name",$("input[name=name]").val());
+					productData.append("afm",$("input[name=afm]").val());
+					productData.append("newmessage",$("textarea[name=new-message]").val());
+					
+					$.ajax({
+						url: "https://food4cook.gr/signup.php",
+						type: "POST",
+						data: productData,
+						processData: false,
+						contentType: false,
+						success: function(data){
+							console.log(data);
+							$("#load_afrotem_ico").hide();
+							if(data.trim() == "email") {
+								$.confirm({
+									title: 'Μήνυμα',
+									content: "Πρέπει να συμπληρώσετε το πεδίο email!",
+									buttons: {
+										confirm: function () {
+											$("input[id=semail]").focus();
+										},
+									}
+								});
+							}
+							else if(data.trim() == "mail") {
+								$.confirm({
+									title: 'Μήνυμα',
+									content: "Το email που δώσατε δεν είναι σωστό!",
+									buttons: {
+										confirm: function () {
+											$("input[id=semail]").focus();
+										},
+									}
+								});
+							}
+							else if(data.trim() == "psw") {
+								$.confirm({
+									title: 'Μήνυμα',
+									content: "Πρέπει να συμπληρώσετε το πεδίο κωδικός!",
+									buttons: {
+										confirm: function () {
+											$("input[name=psw]").focus();
+										},
+									}
+								});
+							}
+							else if(data.trim() == "psw2") {
+								$.confirm({
+									title: 'Μήνυμα',
+									content: "Πρέπει να επαναδιατυπώσετε τον κωδικό σας!",
+									buttons: {
+										confirm: function () {
+											$("input[name=psw2]").focus();
+										},
+									}
+								});
+							}
+							else if(data.trim() == "pswdif") {
+								$.confirm({
+									title: 'Μήνυμα',
+									content: "Η επαναδιατύπωση του κωδικού δεν ταιριάζει με τον κωδικό που δώσατε",
+									buttons: {
+										confirm: function () {
+											$("input[name=psw2]").focus();
+										},
+									}
+								});
+							}
+							else if(data.trim() == "name") {
+								$.confirm({
+									title: 'Μήνυμα',
+									content: "Πρέπει να συμπληρώσετε το πεδίο Όνομα",
+									buttons: {
+										confirm: function () {
+											$("input[name=name]").focus();
+										},
+									}
+								});
+							}
+							else if(data.trim() == "phone") {
+								$.confirm({
+									title: 'Μήνυμα',
+									content: "Πρέπει να συμπληρώσετε το πεδίο Τηλέφωνο και να βάλετε ένα σωστό τηλέφωνο",
+									buttons: {
+										confirm: function () {
+											$("input[name=phone]").focus();
+										},
+									}
+								});
+							}
+							else if(data.trim() == "afm") {
+								$.confirm({
+									title: 'Μήνυμα',
+									content: "Πρέπει να συμπληρώσετε το πεδίο ΑΦΜ",
+									buttons: {
+										confirm: function () {
+											$("input[name=afm]").focus();
+										},
+									}
+								});
+							}
+							else if(data.trim() == "captcha") {
+								$.confirm({
+									title: 'Μήνυμα',
+									content: "Κάτι πήγε στραβά με την επικύρωση σας ότι δεν είστε ρομποτ.",
+									buttons: {
+										confirm: function () {
+											//grecaptcha.reset();
+										},
+									}
+								});
+							}
+							else if(data.trim() == "afmexist") {
+								$.confirm({
+									title: 'Μήνυμα',
+									content: "Το ΑΦΜ που δώσατε χρησιμοποιείται από άλλο χρήστη!",
+									buttons: {
+										confirm: function () {
+											$("input[name=afm]").focus();
+										},
+									}
+								});
+							}
+							else if(data.trim() == "mailexist") {
+								$.confirm({
+									title: 'Μήνυμα',
+									content: "Το email που δώσατε χρησιμοποιείται από άλλο χρήστη! Δώστε ένα διαφορετικό email!",
+									buttons: {
+										confirm: function () {
+											$("input[id=semail]").focus();
+										},
+									}
+								});
+							}
+							else if(data.trim() == "ok") {
+								$("#myForm2user").val($("input[id=semail]").val());
+								$("#myForm2p").val($("input[name=psw]").val());
+								$.confirm({
+									title: 'Μήνυμα',
+									content: "Η εγγραφή σας ολοκληρώθηκε με επιτυχία! Πατήστε Confirm για να εισέλθετε στην εφαρμογή!",
+									buttons: {
+										confirm: function () {
+											document.getElementById("myForm2").submit();
+										},
+									}
+								});
+							}
+						}
+					});
+				});
+				});
+			});
+		  </script>
+					
+			<div class="limiter">
+				<div class="container-login100" style="min-height : unset !important; background-color : #fff;">
+					<div class="wrap-login100 p-l-85 p-r-85 p-t-55 p-b-55" style="background-color : #ebebeb;">
+					
+						<form method=post action="/login/auth/" class="login100-form validate-form flex-sb flex-w">
+						
+														
+														
+							<script>
+							function loginToF4C(userid,access_token,email,picture,fname,lname){
+								var productData = new FormData();
+								productData.append("access_token",access_token);
+								productData.append("email",email);
+								productData.append("picture",picture);
+								productData.append("fname",fname);
+								productData.append("lname",lname);
+								productData.append("userid",userid);
+								
+								$.ajax({
+									url: "https://food4cook.gr/login/fblogin",
+									type: "POST",
+									data: productData,
+									processData: false,
+									contentType: false,
+									success: function(data){
+										if(data == "ok") location.reload();
+										else{
+											ames = "Ζητούμε συγνώμη, αυτή τη στιγμή η είσοδος με τον facebook δεν είναι διαθέσιμη.<br/> Προσπαθήστε σε λίγο ή πατήστε το κουμπλακι <<εγγραφή χρήστη>>";
+											if(data == "redirect_logout") ames = "Ο λογαριασμός σας είναι απενεργοποιημένος.";
+											$.confirm({
+												title: 'Μήνυμα',
+												content: ames,
+												buttons: {
+													confirm: function () {
+														//console.log(data);
+														return;
+													},
+												}
+											});
+										}
+									}
+								});
+							}
+							
+							  function statusChangeCallback(response){
+								console.log(response);
+								if(response.status == "connected"){
+									var auth = response.authResponse;
+									FB.api('/me', {fields: 'last_name,first_name,email,picture'}, function(response) {
+										if(typeof response.email !== "undefined") {
+											loginToF4C(auth.userID,auth.accessToken,response.email,response.picture.data.url,response.first_name,response.last_name);
+										}
+										else{ 
+											loginToF4C(auth.userID,auth.accessToken,"","","","");
+										}
+									});
+								}
+							  }
+							  
+							   function checkLoginState() {               // Called when a person is finished with the Login Button.
+									FB.getLoginStatus(function(response) {   // See the onlogin handler
+									  statusChangeCallback(response);
+									});
+								}
+							
+							  window.fbAsyncInit = function() {
+								FB.init({
+								  appId      : '182407376971386',
+								  cookie     : true,
+								  xfbml      : true,
+								  version    : 'v9.0',
+								  autoLogAppEvents : true
+								});
+								  
+								FB.AppEvents.logPageView();   
+								
+								FB.getLoginStatus(function(response) {
+									//statusChangeCallback(response);
+								});
+
+							  };
+
+							  (function(d, s, id){
+								 var js, fjs = d.getElementsByTagName(s)[0];
+								 if (d.getElementById(id)) {return;}
+								 js = d.createElement(s); js.id = id;
+								 js.src = "https://connect.facebook.net/en_US/sdk.js";
+								 fjs.parentNode.insertBefore(js, fjs);
+							   }(document, 'script', 'facebook-jssdk'));
+							   
+							   
+							function openRegisterWindow(){
+								var reg_html = $("#id03").html();
+								$("#id03").remove();
+								var reg_html2 = $("#id02").html();
+								$("#id02").remove();
+								$("body").prepend('<div id="id02" class="w3-modal open_div" style="z-index: 3; display: block;">' + reg_html2 + '</div>');
+								$("body").prepend('<div id="id03" class="w3-modal open_div" style="z-index: 3; display: block;">'+reg_html+'</div>');
+								$("#id02").hide();
+							}
+							</script>
+														
+							
+							<!--div onlogin="checkLoginState();" class="fb-login-button" data-scope="public_profile,email" data-width="" data-size="large" data-button-type="login_with" data-layout="rounded" data-auto-logout-link="false" data-use-continue-as="false"></div-->
+														
+							<script async defer crossorigin="anonymous" src="https://connect.facebook.net/el_GR/sdk.js#xfbml=1&version=v9.0&appId=1712685218762537&autoLogAppEvents=1" nonce="9NFtYo6s"></script>
+							
+							<input type=hidden name="redirect" value="areas/">
+							<div style="height : 30px; width : 100%"></div>
+							<span class="txt1 p-b-11">
+								Email
+							</span>
+							<div class="wrap-input100 validate-input m-b-36" data-validate = "Το Email απαιτείται">
+								<input class="input100" type="email" name="user">
+								<span class="focus-input100"></span>
+							</div>
+							
+							<span class="txt1 p-b-11">
+								Password
+							</span>
+							<div class="wrap-input100 validate-input m-b-12" data-validate = "Εισάγετε κωδικό">
+								<span class="btn-show-pass">
+									<i class="fa fa-eye"></i>
+								</span>
+								<input class="input100" type="password" name="p" >
+								<span class="focus-input100"></span>
+							</div>
+							
+							<div class="flex-sb-m w-full p-b-48">
+								<div class="contact100-form-checkbox">
+									<label class="label-checkbox100" style="font-family: 'Ubuntu', sans-serif !important; color : #555">
+										<a href="https://food4cook.gr/forgot_password/">Ξέχασα των κωδικό μου!</a>
+									</label>
+								</div>
+							</div>
+							
+							
+							<div class="container-login100-form-btn" style="margin-top : 20px">
+								<button class="login100-form-btn" style="font-family: 'Ubuntu', sans-serif !important; text-align : center; width : 280px;">
+									Είσοδος
+								</button>
+							</div>
+							
+														<div style="margin-top : 20px" class="container-login100-form-btn">
+								<a style="text-align : center; width : 280px; text-decoration : none; color : white; font-family: 'Ubuntu', sans-serif !important;" href="#" class="login100-form-btn" onclick="document.getElementById('id01').style.display='block'">
+									Εγγραφή νέου καταστήματος
+								</a>
+							</div>
+														
+							
+							<div style="margin-top : 20px" class="container-login100-form-btn">
+								<a style="text-align : center; width : 280px; text-decoration : none; color : white; font-family: 'Ubuntu', sans-serif !important;" href="#" class="login100-form-btn" onclick="openRegisterWindow();">
+									Εγγραφή νέου χρήστη
+								</a>
+							</div>
+							
+							
+						</form>
+					</div>
+				</div>
+			</div>
+			
+
+			<div id="dropDownSelect1"></div>
+
+			<script src="https://food4cook.gr/vendor/animsition/js/animsition.min.js"></script>
+			<script src="https://food4cook.gr/vendor/bootstrap/js/popper.js"></script>
+			<script src="https://food4cook.gr/vendor/bootstrap/js/bootstrap.min.js"></script>
+			<script src="https://food4cook.gr/vendor/select2/select2.min.js"></script>
+			<script src="https://food4cook.gr/vendor/daterangepicker/moment.min.js"></script>
+			<script src="https://food4cook.gr/vendor/daterangepicker/daterangepicker.js"></script>
+			<script src="https://food4cook.gr/vendor/countdowntime/countdowntime.js"></script>
+			<script src="https://food4cook.gr/js/main.js"></script>
+			</body>
+							
+					<div class="w3-col s12 m12 l12" style="height : 15px"></div>
+					<div class="w3-row">
+					
+					</div>
+								
+				</div>
+			</div>
+			
+						
+			<div>
+				<div class="w3-section" style="width:100%">
+				<div style="display : inline-block">
+				<img style="margin-bottom : 0px" src="https://food4cook.gr/images/gr.png">
+						&nbsp;
+		<label style="text-decoration : none; color :  rgb(118, 42, 68); font-size : 14px">
+		Αλλαγή γλώσσας.		</label>
+		<select class="ch-lang" name=idlang style="color : rgb(118, 42, 68); font-size : 14px;  border : 1px solid #e0e0e0">
+							<option selected value="1" title="https://food4cook.gr/images/gr.png">Ελληνικά</option>
+							<option  value="2" title="https://food4cook.gr/images/gb.png">English</option>
+							<option  value="3" title="https://food4cook.gr/images/gr.png">Français</option>
+							<option  value="4" title="https://food4cook.gr/images/gr.png">Deutsch</option>
+							<option  value="5" title="https://food4cook.gr/images/gr.png">Italian</option>
+							<option  value="6" title="https://food4cook.gr/images/gr.png">Spanish</option>
+							<option  value="7" title="https://food4cook.gr/images/gr.png">Chinese (Mandarin)</option>
+							<option  value="8" title="https://food4cook.gr/images/gr.png">Russian</option>
+							<option  value="9" title="https://food4cook.gr/images/gr.png">Arabic</option>
+							<option  value="10" title="https://food4cook.gr/images/gr.png">Portuguese</option>
+							<option  value="11" title="https://food4cook.gr/images/gr.png">Japanese</option>
+							<option  value="12" title="https://food4cook.gr/images/gr.png">Korean</option>
+							<option  value="13" title="https://food4cook.gr/images/gr.png">Turkish</option>
+							<option  value="14" title="https://food4cook.gr/images/gr.png">Dutch</option>
+							<option  value="15" title="https://food4cook.gr/images/gr.png">Polish</option>
+							<option  value="16" title="https://food4cook.gr/images/gr.png">Swedish</option>
+							<option  value="17" title="https://food4cook.gr/images/gr.png">Norwegian</option>
+							<option  value="18" title="https://food4cook.gr/images/gr.png">Danish</option>
+							<option  value="19" title="https://food4cook.gr/images/gr.png">Czech</option>
+					</select> 
+		<script>
+		$("select.ch-lang").change(function(e){
+			e.preventDefault();
+			//var get = "";
+			var get = "";
+							get += "/" + "food4cook.gr";
+							get += "/" + "main";
+							get += "/" + "areas";
+						var url = encodeURIComponent("https:/" + get);
+			window.location = "https://food4cook.gr/main/change_lang/?redirect="+url+"&idlang=" + $(this).val();
+		});
+		</script>
+				</div>
+				</div>
+			</div>
+			
+						
+		</div>
+	</div>
+	
+		
+	<Table id=top-bar width=100% border=0 bgcolor=#202020 cellspacing=0 style='text-align: Left; font: bold 100%'   >
+		<tr>
+		<td valign=top align=right style='padding : 10px 10px; width : 33.3%; text-align: left;'>
+			<a class="open_div menu_link" href=#>
+				<i class="fas fa-bars ac1 from_main"></i>
+			</a>
+			<span id=notif_sign></span>
+		</td>
+		<td style='padding : 10px 10px; width : 33.3%; text-align: center;'>
+			<a class="store_catalogue" href="https://food4cook.gr/main/">
+			<img id=main_img style='width : 160px; margin-left : 0px; border-radius: 5px;' src='https://food4cook.gr/images/leaf2.png'>
+			</a>
+		</td>
+		<td valign=top align=right style='padding : 10px 10px; width : 33.3%; text-align: right;'>
+			<a id="store_catalogue_id" class="store_catalogue" href="https://food4cook.gr/main/areas"><i class="fas fa-map-marked ac1 from_main"></i></a>		</td>
+	</table>
+	</div>
+</div>			<style>
+				.fa-spinner {
+				  -webkit-animation: fa-spin 1s infinite linear;
+				  -moz-animation: fa-spin 1s infinite linear;
+				  -o-animation: fa-spin 1s infinite linear;
+				  animation: fa-spin 1s infinite linear;
+				}
+				</style>
+				<div id="id01-store-load" class="w3-modal">
+					<div class="w3-modal-content" style="background-color : unset; display : table-cell; vertical-align:middle; text-align : center">
+					  <div class="w3-container" style="font-size : 80px; color : #e5d974">
+						<i class="fas fa-spinner"></i>
+					  </div>
+					</div>
+				</div>
+				
+				<div style="width : 100%; margin-top : 0px; background-color : #fff; margin-top: -90px;">
+					<div class="apage-image">
+						<div class="image-box__overlay">
+							<div style="max-width : 1280px; margin : 0 auto; height : 100%;">
+								<div class="w3-row w3-container" style="width : 100%; text-align : center; padding-top : 100px">
+										<div class="w3-col l12 m12">
+										<h1 style="color : white; width : 100%; text-align : center">Περιοχές καταστημάτων</h1>
+										</div>
+										<div class="w3-col l12 m12">
+										<h4 style="color : white; width : 100%; text-align : center">όπου μπορείτε να κάνετε τις παραγγελίες σας</h4>
+										</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					
+				</div>
+				<div style="width : 100%; margin-top : -40px; background-color : #efefef">
+					<div style="max-width : 1290px; margin : 0 auto; height : 100%;">
+						<div id="fetch_stores_con" class="w3-row-padding" style="width : 100%; padding : 35px 0px;">
+							<div class="w3-col s12 m12 l12" style="padding: 5px 5px;">
+								<div style="color : #555555; border : 1px #e0e0e0 solid; border-radius : 5px; background-color : #fff; padding : 15px 15px">
+									<h3 style="color : #000; width : 100%; text-align : left">Καταστήματα σε 51 πόλεις της Ελλάδας</h3>
+									<div style="">
+																						<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												CITY												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/CITY">CITY</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												ΑΘΗΝΑ												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/ΑΘΗΝΑ">ΑΘΗΝΑ</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												Αθήνα												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Νέα Ιωνία">Νέα Ιωνία</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												ΑΛΕΞΑΝΔΡΕΙΑ												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/ΑΛΕΞΑΝΔΡΕΙΑ">ΑΛΕΞΑΝΔΡΕΙΑ</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												ΒΕΡΟΙΑ												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/ΒΕΡΟΙΑ">ΒΕΡΟΙΑ</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												ΓΙΑΝΝΙΤΣΑ												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/ΓΙΑΝΝΙΤΣΑ">ΓΙΑΝΝΙΤΣΑ</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												ΓΛΥΦΑΔΑ												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/ΓΛΥΦΑΔΑ">ΓΛΥΦΑΔΑ</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												Εύβοια												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Αμάρυνθος">Αμάρυνθος</a>
+													</li>
+											
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Μώλος">Μώλος</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												Ημαθία												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Αλεξάνδρεια">Αλεξάνδρεια</a>
+													</li>
+											
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Βέροια">Βέροια</a>
+													</li>
+											
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Νάουσα">Νάουσα</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												ΘΑΣΟΣ												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/ΘΑΣΟΣ">ΘΑΣΟΣ</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												ΘΕΡΜΗ												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/ΘΕΡΜΗ">ΘΕΡΜΗ</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												Θεσσαλονίκη												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Θέρμη">Θέρμη</a>
+													</li>
+											
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Θεσσαλονίκη">Θεσσαλονίκη</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												ΙΑΛΥΣΟΣ												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/ΙΑΛΥΣΟΣ">ΙΑΛΥΣΟΣ</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												ΙΩΑΝΝΙΝΑ												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/ΙΩΑΝΝΙΝΑ">ΙΩΑΝΝΙΝΑ</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												Καβάλα												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Καβάλα">Καβάλα</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												Καστοριά												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Καστοριά">Καστοριά</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												Κεντρικός Τομέας Αθηνών												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Αθήνα">Αθήνα</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												Κέρκυρα												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Κέρκυρα">Κέρκυρα</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												Κοζάνη												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Κοζάνη">Κοζάνη</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												ΚΟΡΙΝΟΣ												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Κορινος Πιερίας">Κορινος Πιερίας</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												Λάρισα												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Λάρισα">Λάρισα</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												ΛΕΥΚΑΔΑ												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/ΛΕΥΚΑΔΑ">ΛΕΥΚΑΔΑ</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												ΛΙΜΝΗ												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/ΛΙΜΝΗ">ΛΙΜΝΗ</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												Μεσσηνία												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Καλαμάτα">Καλαμάτα</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												ΜΕΣΣΗΝΙΑ												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/ΚΥΠΑΡΙΣΣΙΑ">ΚΥΠΑΡΙΣΣΙΑ</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												ΜΥΤΙΛΗΝΗ												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/ΜΥΤΙΛΗΝΗ">ΜΥΤΙΛΗΝΗ</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												Νότιος Τομέας Αθηνών												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Γλυφάδα">Γλυφάδα</a>
+													</li>
+											
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Ελληνικό">Ελληνικό</a>
+													</li>
+											
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Καλλιθέα">Καλλιθέα</a>
+													</li>
+											
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Παλαιό Φάληρο">Παλαιό Φάληρο</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												ΞΑΝΘΗ												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/ΞΑΝΘΗ">ΞΑΝΘΗ</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												ΠΑΛΛΗΝΗ												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/ΠΑΛΛΗΝΗ">ΠΑΛΛΗΝΗ</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												ΠΑΡΑΛΙΑΚΗ ΧΩΡΑΣ												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/ΝΑΞΟΣ">ΝΑΞΟΣ</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												ΠΑΤΡΑ												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/ΠΑΤΡΑ">ΠΑΤΡΑ</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												Πέλλα												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Γιαννιτσά">Γιαννιτσά</a>
+													</li>
+											
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Σκύδρα">Σκύδρα</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												Περιφερειακή ενότητα Βορείου Τομέα Αθηνών												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Μαρούσι">Μαρούσι</a>
+													</li>
+											
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Μεταμόρφωση">Μεταμόρφωση</a>
+													</li>
+											
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Νέα Ιωνία">Νέα Ιωνία</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												Περιφερειακή Ενότητα Δυτικού Τομέα Αθηνών												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Περιστέρι">Περιστέρι</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												Περιφερειακή Ενότητα Πειραιώς												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/ΠΕΙΡΑΙΑΣ">ΠΕΙΡΑΙΑΣ</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												Πιερία												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Κατερίνη">Κατερίνη</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												ΠΡΕΒΕΖΑ												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/ΠΡΕΒΕΖΑ">ΠΡΕΒΕΖΑ</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												ΠΥΛΟΣ												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Πύλος">Πύλος</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												Σαντορίνη												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Οία">Οία</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												Χαλκιδική												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Πολύγυρος">Πολύγυρος</a>
+													</li>
+											
+																							</ul>
+												</div>
+																								<div style="font-weight : bold; color: #000; width : 100%; margin-top : 20px">
+												Χρυσούπολη												</div>
+												
+												<div style="font-weight : normal; color: #000; width : 100%; margin-top : 10px">
+													<ul class="w3-row" style="width : 100%">
+																					
+													<li class="w3-col s4 m3 l3" style="color : #000">
+													<a href="https://food4cook.gr/main/areas/Χρυσούπολη">Χρυσούπολη</a>
+													</li>
+											
+																						</ul>
+											</div>
+																				
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+					<footer style="width : 100%; background-color : #fff; border-top : 1px #e0e0e0 solid; margin-top : 20px">
+		<!--div style="max-width : 1280px; margin : 0 auto; padding : 80px 0px" class="w3-row">
+			
+			<div class="w3-col s12 m6 l6">
+				<div style="padding : 50px 30px; ">
+					<div style="font-size : 18px; color: #000; font-weight : bold; width : 100%; text-align : right">
+					Κατέβασε το App
+					</div>
+					<div style="font-size : 14px; color: #555; margin-top : 10px;  width : 100%; text-align : right">
+					Παράγγειλε τώρα από το Android τηλέφωνό σου το φαγητό ή το καφέ σου σε 1 μόνο λεπτό!
+					</div>
+					<div style="margin-top : 10px;  width : 100%; text-align : right">
+						<a href="https://play.app.goo.gl/?link=https://play.google.com/store/apps/details?id=gr.food4cook.food4cookapp">
+						<img style="width : 150px" src="https://food4cook.gr/images/en_badge_web_generic.png"></img>
+						</a>
+					</div>
+				</div>
+			</div>
+			<div class="w3-col s12 m6 l6" style="text-align : left">
+				<img style="object-fit: cover; object-position: center; height : 500px" src="https://food4cook.gr/images/3529460_white.jpg"></img>
+			</div>
+			
+		</div-->
+	</footer>
+	<footer style="width : 100%; background-color : #efefef; border-top : 1px #e0e0e0 solid;">	
+		<div style="max-width : 1280px; margin : 0 auto; padding : 90px 20px; font-size : 14px; color: #555; text-align : center;">
+			Powered by Garsonista.gr © 2026. All Right Reserved 
+		</div>
+	</footer>
+	
+	</body>
+</html>
