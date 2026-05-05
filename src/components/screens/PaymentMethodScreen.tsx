@@ -21,6 +21,9 @@ import type {RootStackParamList} from '@navigation/types';
 import {useAuthStore, useCartStore} from '@store';
 import {kioskTopBrandLogo, shadowChoiceCard, theme} from '@theme/kiosk';
 import {kioskLogoImageUri, remoteUriSource} from '@utils/productImage';
+import {nextTicketNumber} from '@services/ticketCounter';
+import {PrintPaymentReceiptUseCase} from '../../core/useCases/PrintPaymentReceiptUseCase';
+import {receiptRepository} from '../../repositories/ReceiptRepository';
 import {translate} from '../../stores/Localization/LocalizationStore';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PaymentMethod'>;
@@ -29,6 +32,9 @@ const payCoinsImg = require('../../assets/images/kiosk-payment-coins.png');
 const payCardImg = require('../../assets/images/kiosk-payment-card.png');
 /** `kiosk_image3` (Cordova) — same as `MenuScreen` / `DiningChoiceScreen` */
 const kioskBrandLogoFallback = require('../../assets/images/garsonista-kiosk-logo.png');
+const printPaymentReceiptUseCase = new PrintPaymentReceiptUseCase(
+  receiptRepository,
+);
 
 function KioskPaymentIcon({variant}: {variant: 'cash' | 'card'}): React.JSX.Element {
   return (
@@ -61,6 +67,39 @@ export function PaymentMethodScreen({navigation}: Props): React.JSX.Element {
     }
   };
 
+  const handlePayPress = (paymentMethod: 'cash' | 'card') => {
+    const orderNumber = nextTicketNumber();
+
+    if (cart && cart.items.length > 0) {
+      void printPaymentReceiptUseCase
+        .execute({
+          details: {
+            orderNumber,
+            paymentMethod,
+            currencySymbol: '€',
+            createdAt: new Date(),
+            lines: cart.items.map(i => ({
+              productName: i.productName,
+              quantity: i.quantity,
+              lineTotal: i.lineTotal,
+            })),
+          },
+        })
+        .catch(error => {
+          const message =
+            error instanceof Error ? error.message : JSON.stringify(error);
+          console.warn(
+            `[ThermalPrinting] Failed to print payment receipt (${paymentMethod}): ${message}`,
+          );
+        });
+    }
+
+    navigation.navigate(ROUTES.TransactionReceipt, {
+      paymentMethod,
+      orderNumber,
+    });
+  };
+
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <View style={styles.topBrand}>
@@ -86,7 +125,7 @@ export function PaymentMethodScreen({navigation}: Props): React.JSX.Element {
                 pressed && styles.choicePressed,
               ]}
               android_ripple={{color: 'rgba(0,0,0,0.06)'}}
-              onPress={() => navigation.navigate(ROUTES.TransactionReceipt)}>
+              onPress={() => handlePayPress('cash')}>
               <KioskPaymentIcon variant="cash" />
               <Text style={styles.choiceText}>{translate('kiosk.pay.cash')}</Text>
             </Pressable>
@@ -98,7 +137,7 @@ export function PaymentMethodScreen({navigation}: Props): React.JSX.Element {
                 pressed && styles.choicePressed,
               ]}
               android_ripple={{color: 'rgba(0,0,0,0.06)'}}
-              onPress={() => navigation.navigate(ROUTES.TransactionReceipt)}>
+              onPress={() => handlePayPress('card')}>
               <KioskPaymentIcon variant="card" />
               <Text style={styles.choiceText}>{translate('kiosk.pay.card')}</Text>
             </Pressable>

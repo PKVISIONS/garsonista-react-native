@@ -1,5 +1,5 @@
 module.exports = {
-  preset: '@react-native/jest-preset',
+  preset: 'jest-expo',
   moduleNameMapper: {
     '^@models$': '<rootDir>/src/models/index.ts',
     '^@models/(.*)$': '<rootDir>/src/models/$1',

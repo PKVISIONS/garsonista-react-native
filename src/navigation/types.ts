@@ -9,7 +9,7 @@ export type RootStackParamList = {
   PaymentMethod: undefined;
   PaymentCard: {amountEuros: number};
   PaymentBank: undefined;
-  TransactionReceipt: undefined;
+  TransactionReceipt: {paymentMethod: 'cash' | 'card'; orderNumber: number};
   OrderComplete: undefined;
   CardFailed: undefined;
   TaxCustomer: undefined;

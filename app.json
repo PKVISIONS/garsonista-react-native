@@ -7,6 +7,8 @@
     "version": "0.0.1",
     "scheme": "garsonistakiosk",
     "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "plugins": [],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "org.reactjs.native.example.GarsonistaKiosk"
