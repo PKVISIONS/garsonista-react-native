@@ -22,11 +22,9 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {ROUTES} from '@constants/routes';
 import type {RootStackParamList} from '@navigation/types';
 import {enqueueOfflineCart, submitCartOnline} from '@services/orderService';
-import {printOrderSlip} from '@services/printing/printerService';
 import {useAuthStore, useCartStore} from '@store';
 import {useNetworkStatus} from '@hooks/useNetworkStatus';
 import {buildWireContext} from '@utils/orderContext';
-import {nextTicketNumber} from '@services/ticketCounter';
 import {kioskTopBrandLogo, theme} from '@theme/kiosk';
 import {kioskLogoImageUri, remoteUriSource} from '@utils/productImage';
 import {translate} from '../../stores/Localization/LocalizationStore';
@@ -38,7 +36,11 @@ const garsonistaPoweredByLogo = require('../../assets/images/garsonista-kiosk-lo
 
 const RESET_AFTER_MS = 7000;
 
-export function TransactionReceiptScreen({navigation}: Props): React.JSX.Element {
+export function TransactionReceiptScreen({
+  navigation,
+  route,
+}: Props): React.JSX.Element {
+  const orderNumberFromRoute = route.params?.orderNumber ?? null;
   const session = useAuthStore(s => s.session);
   const wireRow = useAuthStore(s => s.wireRow);
   const cart = useCartStore(s => s.cart);
@@ -68,7 +70,7 @@ export function TransactionReceiptScreen({navigation}: Props): React.JSX.Element
         return;
       }
       submitStartedRef.current = true;
-      const ticket = nextTicketNumber();
+      const ticket = orderNumberFromRoute ?? 0;
       if (!cancelled) {
         setOrderNumber(ticket);
       }
@@ -84,20 +86,6 @@ export function TransactionReceiptScreen({navigation}: Props): React.JSX.Element
           if (cancelled) {
             return;
           }
-        }
-        try {
-          await printOrderSlip([
-            translate('kiosk.receipt.printKioskName'),
-            translate('kiosk.receipt.printOrder'),
-            ...cart.items.map(i =>
-              translate('kiosk.receipt.printLine')
-                .replace('{{name}}', i.productName)
-                .replace('{{qty}}', String(i.quantity))
-                .replace('{{total}}', i.lineTotal.toFixed(2)),
-            ),
-          ]);
-        } catch {
-          /* optional */
         }
         clearCart();
       } catch {
@@ -117,7 +105,7 @@ export function TransactionReceiptScreen({navigation}: Props): React.JSX.Element
     return () => {
       cancelled = true;
     };
-  }, [session, wireRow, cart, online, clearCart]);
+  }, [session, wireRow, cart, online, clearCart, orderNumberFromRoute]);
 
   useEffect(() => {
     if (submitting) {

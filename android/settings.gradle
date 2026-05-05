@@ -6,7 +6,7 @@ pluginManagement {
     }.standardOutput.asText.get().trim()
   ).getParentFile().absolutePath
   includeBuild(reactNativeGradlePlugin)
-
+  
   def expoPluginsPath = new File(
     providers.exec {
       workingDir(rootDir)
@@ -23,7 +23,7 @@ plugins {
 }
 
 extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
-  if (System.getenv("EXPO_USE_COMMUNITY_AUTOLINKING") == "1") {
+  if (System.getenv('EXPO_USE_COMMUNITY_AUTOLINKING') == '1') {
     ex.autolinkLibrariesFromCommand()
   } else {
     ex.autolinkLibrariesFromCommand(expoAutolinking.rnConfigCommand)
@@ -31,9 +31,9 @@ extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
 }
 expoAutolinking.useExpoModules()
 
-rootProject.name = "GarsonistaKiosk"
+rootProject.name = 'Garsonista Kiosk'
 
 expoAutolinking.useExpoVersionCatalog()
 
-include(":app")
+include ':app'
 includeBuild(expoAutolinking.reactNativeGradlePlugin)
