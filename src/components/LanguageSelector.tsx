@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(255, 0, 0, 0.45)',
   },
   sheetWrap: {
     ...StyleSheet.absoluteFill,
