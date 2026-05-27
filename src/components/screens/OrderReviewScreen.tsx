@@ -8,6 +8,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  type ImageStyle,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -43,7 +44,7 @@ export function OrderReviewScreen({navigation}: Props): React.JSX.Element {
   const clear = useCartStore(s => s.clear);
 
   const {width} = useWindowDimensions();
-  const cardMargin = Math.round(width * 0.06);
+  const cardMargin = Math.max(12, Math.round(width * 0.03));
   const lang = localizationStore.currentLanguageCode;
 
   const total = useMemo(() => {
@@ -68,7 +69,7 @@ export function OrderReviewScreen({navigation}: Props): React.JSX.Element {
       <View style={styles.header}>
         <Image
           source={logoSource}
-          style={styles.headerBrandLogo}
+          style={styles.headerBrandLogo as ImageStyle}
           resizeMode="contain"
           accessibilityLabel={translate('kiosk.receipt.brand')}
         />
@@ -111,7 +112,7 @@ export function OrderReviewScreen({navigation}: Props): React.JSX.Element {
                       {categoryIconSrc ? (
                         <Image
                           source={categoryIconSrc}
-                          style={styles.lineCategoryIcon}
+                          style={styles.lineCategoryIcon as ImageStyle}
                           resizeMode="contain"
                           fadeDuration={Platform.OS === 'android' ? 0 : undefined}
                           accessibilityLabel={
@@ -182,7 +183,7 @@ export function OrderReviewScreen({navigation}: Props): React.JSX.Element {
         <View style={styles.totalRow}>
           <Image
             source={cartIconImg}
-            style={styles.totalCartIcon}
+            style={styles.totalCartIcon as ImageStyle}
             resizeMode="contain"
           />
           <Text style={styles.totalLabel}>{translate('kiosk.orderReview.total')}</Text>
@@ -227,24 +228,24 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     paddingTop: 8,
-    paddingBottom: 16,
-    gap: 12,
+    paddingBottom: 12,
+    gap: 10,
   },
   headerBrandLogo: {
     ...kioskTopBrandLogo,
   },
   orderTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 22,
+    fontWeight: '700',
     color: theme.color.textPrimary,
   },
   scrollArea: {
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 12,
+    paddingTop: 8,
     paddingBottom: 16,
-    gap: 12,
+    gap: 10,
   },
   emptyState: {
     alignItems: 'center',
@@ -259,108 +260,109 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: theme.color.bgPrimary,
     borderRadius: theme.radius.large,
-    paddingHorizontal: 28,
-    paddingVertical: 20,
-    gap: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    gap: 12,
     ...cardShadow,
   },
   /** Category icon from menu rail — no border; larger than before */
   lineCategoryColumn: {
-    width: 88,
-    marginLeft: '4%',
+    width: 74,
     alignItems: 'center',
     justifyContent: 'center',
   },
   lineCategoryBadge: {
-    width: 80,
-    height: 80,
+    width: 64,
+    height: 64,
     alignItems: 'center',
     justifyContent: 'center',
   },
   lineCategoryIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 8,
+    width: 64,
+    height: 64,
+    borderRadius: 10,
   },
   lineCategoryIconPlaceholder: {
-    width: 72,
-    height: 72,
-    borderRadius: 8,
+    width: 64,
+    height: 64,
+    borderRadius: 10,
     backgroundColor: theme.color.pricePillBg,
   },
   lineCategoryEmpty: {
-    width: 72,
-    height: 72,
-    borderRadius: 8,
+    width: 64,
+    height: 64,
+    borderRadius: 10,
     backgroundColor: '#1A1A1A',
   },
   itemInfo: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 8,
+    minWidth: 0,
   },
   itemName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
     color: theme.color.textPrimary,
-    marginBottom: 6,
+    marginBottom: 8,
+    lineHeight: 22,
   },
   itemDescription: {
-    fontSize: 13,
+    fontSize: 15,
     color: theme.color.textSecondary,
-    lineHeight: 19,
+    lineHeight: 20,
   },
   spacer: {
-    flex: 0.4,
+    flex: 0.15,
   },
   qtyColumn: {
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   qtyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 12,
   },
   qtyCircleBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     borderWidth: 2,
     borderColor: theme.color.accentPrimary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   qtyCircleText: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: '600',
     color: theme.color.accentPrimary,
-    lineHeight: 30,
+    lineHeight: 24,
   },
   qtyNumber: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: theme.color.textPrimary,
-    minWidth: 28,
+    minWidth: 24,
     textAlign: 'center',
   },
   removeBtn: {
     borderWidth: 1.5,
     borderColor: theme.color.border,
     borderRadius: 24,
-    paddingHorizontal: 22,
-    paddingVertical: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 6,
   },
   removeText: {
-    fontSize: 15,
+    fontSize: 14,
     color: theme.color.textSecondary,
     fontWeight: '500',
   },
   itemPrice: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     color: theme.color.textPrimary,
-    minWidth: 60,
-    marginRight: 100,
+    minWidth: 72,
+    marginRight: 0,
     textAlign: 'right',
   },
   bottomBar: {
@@ -381,33 +383,33 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   totalLabel: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '700',
     color: theme.color.textPrimary,
     flex: 1,
   },
   totalPrice: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '700',
     color: theme.color.textPrimary,
   },
   completeBtnRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
     paddingHorizontal: 16,
   },
   completeBtn: {
     backgroundColor: theme.color.accentPrimary,
     borderRadius: theme.radius.button,
-    paddingVertical: 12,
+    paddingVertical: 14,
     alignItems: 'center',
-    width: '50%',
+    width: '100%',
   },
   completeBtnDisabled: {
     opacity: 0.45,
   },
   completeBtnText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
     color: theme.color.onAccent,
   },

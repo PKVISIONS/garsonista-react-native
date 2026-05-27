@@ -1,83 +1,49 @@
-import React, {useCallback, useEffect, useState} from 'react';
-import {Image, type ImageLoadEventData, type NativeSyntheticEvent, Platform, View} from 'react-native';
-import {getCachedImageAspect, setCachedImageAspect} from '@utils/imageAspectCache';
+import React from 'react';
+import {Image, Platform, StyleSheet, View} from 'react-native';
 import {remoteUriSource} from '@utils/productImage';
 
-/** Before `Image.getSize` / `onLoad` reports real pixels (same as menu grid) */
-const PRODUCT_IMAGE_FALLBACK_ASPECT = 1.35;
-
-const imageFrameStyle = {
-  alignItems: 'center' as const,
-  justifyContent: 'center' as const,
-};
+/** Fixed product image frame ratio used across menu cards and option tiles. */
+const PRODUCT_IMAGE_ASPECT_RATIO = 16 / 9;
 
 /**
- * Product tile image: height from intrinsic aspect (no letterboxed fixed band).
+ * Product tile image: fixed 16:9 frame so every card has the same image area.
  * Used by `MenuScreen` and `ProductDetailScreen` option tiles for matching layout.
  */
 export function ProductGridImage({
   uri,
   width,
-  resizeMode = 'contain',
+  resizeMode = 'cover',
 }: {
   uri: string;
   width: number;
-  /** `cover` fills the frame (no letterboxing); `contain` matches menu grid. */
-  resizeMode?: 'contain' | 'cover';
+  /** `cover` keeps every image in the same 16:9 frame. */
+  resizeMode?: 'cover' | 'contain';
 }): React.JSX.Element {
-  const [aspect, setAspect] = useState<number | null>(() =>
-    getCachedImageAspect(uri),
-  );
-
-  useEffect(() => {
-    const cached = getCachedImageAspect(uri);
-    if (cached != null) {
-      setAspect(cached);
-      return;
-    }
-    let cancelled = false;
-    Image.getSize(
-      uri,
-      (w, h) => {
-        if (!cancelled && w > 0 && h > 0) {
-          const r = w / h;
-          setCachedImageAspect(uri, r);
-          setAspect(r);
-        }
-      },
-      () => {},
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, [uri]);
-
-  const onLoad = useCallback(
-    (e: NativeSyntheticEvent<ImageLoadEventData>) => {
-      const {width: w, height: h} = e.nativeEvent.source;
-      if (w && h) {
-        const r = w / h;
-        setCachedImageAspect(uri, r);
-        setAspect(r);
-      }
-    },
-    [uri],
-  );
-
-  const ratio = aspect ?? PRODUCT_IMAGE_FALLBACK_ASPECT;
-  const height = width / ratio;
+  const height = Math.round(width * (9 / 16));
 
   return (
-    <View style={[imageFrameStyle, {width, minHeight: height}]}>
+    <View
+      style={[
+        styles.frame,
+        {width: '100%', height, aspectRatio: PRODUCT_IMAGE_ASPECT_RATIO},
+      ]}>
       <Image
         source={remoteUriSource(uri)}
-        style={{width, height}}
+        style={styles.image}
         resizeMode={resizeMode}
-        onLoad={onLoad}
         fadeDuration={Platform.OS === 'android' ? 0 : undefined}
       />
     </View>
   );
 }
 
-export {PRODUCT_IMAGE_FALLBACK_ASPECT};
+export {PRODUCT_IMAGE_ASPECT_RATIO};
+
+const styles = StyleSheet.create({
+  frame: {
+    overflow: 'hidden',
+  },
+  image: {
+    ...StyleSheet.absoluteFillObject,
+  },
+});

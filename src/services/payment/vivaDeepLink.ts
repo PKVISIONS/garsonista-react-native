@@ -5,6 +5,7 @@ export type VivaSaleParams = {
   amountEuros: number;
   tipEuros?: number;
   showReceipt?: boolean;
+  fiscalisationData?: string;
   /** When AADE signing is required, pass digest/signature from fiscal step. */
   aade?: {
     providerId: string;
@@ -24,6 +25,7 @@ export function buildVivaPaymentUri(params: VivaSaleParams): string {
   const clientId = hasAade
     ? `AUTX${params.aade?.providerId ?? ''}`
     : params.clientTransactionId;
+  const showReceipt = params.showReceipt ?? true;
 
   let uri =
     'vivapayclient://pay/v1' +
@@ -32,9 +34,23 @@ export function buildVivaPaymentUri(params: VivaSaleParams): string {
     `&clientTransactionId=${encodeURIComponent(clientId)}` +
     `&amount=${amountCents}` +
     `&tipAmount=${tipCents}` +
-    `&show_receipt=${hasAade ? 'false' : String(params.showReceipt ?? true)}` +
-    `&show_transaction_result=${hasAade ? 'false' : 'true'}` +
-    `&show_rating=${hasAade ? 'false' : 'true'}`;
+    `&show_receipt=${hasAade ? 'false' : 'false'}` +
+    `&show_transaction_result=${hasAade ? 'false' : 'false'}` +
+    `&show_rating=${hasAade ? 'false' : 'false'}`;
+
+  uri +=
+    '&callback=' +
+    encodeURIComponent('garsonista_offline://viva-return');
+
+  uri +=
+    `&ISV_amount=${Math.round(params.amountEuros * 0.001 * 100)}` +
+    '&ISV_clientId=78mmql4v0qfcdgep1l7mhjxfkzn8msi8zuzwa8q0b61t1.apps.vivapayments.com' +
+    '&ISV_clientSecret=X7JpNWY190cH649R3n2koFHh0x5THP' +
+    '&ISV_sourceCode=1350';
+
+  if (params.fiscalisationData) {
+    uri += `&fiscalisationData=${encodeURIComponent(params.fiscalisationData)}`;
+  }
 
   if (hasAade && params.aade) {
     uri +=

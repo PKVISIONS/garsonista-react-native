@@ -26,5 +26,6 @@ allprojects {
         maven { url("$rootDir/../node_modules/@react-native-async-storage/async-storage/android/local_repo") }
         google()
         mavenCentral()
+        maven { url "https://repo1.maven.org/maven2" }
     }
 }

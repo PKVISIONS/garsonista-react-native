@@ -66,6 +66,7 @@ android {
 
 dependencies {
     implementation("com.facebook.react:react-android")
+    implementation("com.sunmi:printerlibrary:1.0.18")
 
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true"
     def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true"

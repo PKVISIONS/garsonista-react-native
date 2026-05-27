@@ -5,10 +5,9 @@ import type {VivaTransaction} from '@models/payment';
 export type VivaCallbackFields = Record<string, string | null>;
 
 export function parseVivaCallbackUrl(url: string): VivaCallbackFields {
-  const normalized = url.replace(
-    'garsonista_offline://https://garsonista.datapp.gr/main/',
-    '',
-  );
+  const normalized = url.startsWith('garsonista_offline://')
+    ? url.slice('garsonista_offline://'.length)
+    : url;
   const q = normalized.includes('?')
     ? normalized.slice(normalized.indexOf('?'))
     : `?${normalized}`;

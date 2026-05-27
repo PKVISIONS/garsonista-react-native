@@ -42,19 +42,32 @@ function DeepLinkBridge(): React.JSX.Element {
   const setDeepLink = usePaymentStore(s => s.setDeepLink);
 
   useEffect(() => {
-    const sub = Linking.addEventListener('url', ({url}) => {
+    const handleUrl = (url: string) => {
       setDeepLink(url);
       const fields = parseVivaCallbackUrl(url);
       if (fields.status === 'success') {
         setPhase('success');
-        navigation.navigate(ROUTES.OrderComplete);
+        navigation.navigate(ROUTES.TransactionReceipt, {
+          paymentMethod: 'card',
+        });
       } else if (fields.status === 'failed') {
         setPhase('failed');
         navigation.navigate(ROUTES.CardFailed);
       } else if (fields.status) {
         setPhase('processing');
       }
+    };
+
+    const sub = Linking.addEventListener('url', ({url}) => {
+      handleUrl(url);
     });
+
+    void Linking.getInitialURL().then(url => {
+      if (url) {
+        handleUrl(url);
+      }
+    });
+
     return () => sub.remove();
   }, [navigation, setDeepLink, setPhase]);
 

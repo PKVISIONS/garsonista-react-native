@@ -5,7 +5,7 @@ import {createId} from '@utils/id';
 
 type CartState = {
   cart: Cart | null;
-  resetForServiceType: (type: 'dine-in' | 'takeaway') => void;
+  resetForServiceType: (type: 'dine-in' | 'takeaway', tableId?: number) => void;
   addItem: (item: Omit<CartItem, 'lineId'> & {lineId?: string}) => void;
   updateLineQuantity: (lineId: string, quantity: number) => void;
   removeLine: (lineId: string) => void;
@@ -15,11 +15,11 @@ type CartState = {
 
 export const useCartStore = create<CartState>((set, get) => ({
   cart: null,
-  resetForServiceType: type =>
+  resetForServiceType: (type, tableId = KIOSK_ORDER_TABLE_ID) =>
     set({
       cart: {
         id: createId(),
-        tableId: KIOSK_ORDER_TABLE_ID,
+        tableId,
         type,
         items: [],
         comment: '',

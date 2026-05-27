@@ -6,3 +6,4 @@ export * from './payment';
 export * from './fiscal';
 export * from './customer';
 export * from './featureFlags';
+export * from './storeTable';

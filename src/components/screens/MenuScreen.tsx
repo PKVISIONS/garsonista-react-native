@@ -8,6 +8,7 @@ import {ROUTES} from '@constants/routes';
 import type {RootStackParamList} from '@navigation/types';
 import type {Category, Product} from '@models';
 import {priceProductsForTable} from '@services/catalogService';
+import {resolveDefaultTableId} from '@services/catalogService';
 import {useAuthStore, useCartStore, useCatalogStore} from '@store';
 import {theme, cardShadow, shadowFooterUp} from '@theme/kiosk';
 import {pickCatalogText} from '@utils/catalogText';
@@ -18,7 +19,7 @@ import {
   remoteUriSource,
 } from '@utils/productImage';
 import {StartOverConfirmModal} from '../StartOverConfirmModal';
-import {ProductGridImage, PRODUCT_IMAGE_FALLBACK_ASPECT} from '../ProductGridImage';
+import {ProductGridImage, PRODUCT_IMAGE_ASPECT_RATIO} from '../ProductGridImage';
 import {localizationStore, translate} from '../../stores/Localization/LocalizationStore';
 
 const cartIconImg = require('../../assets/images/cart-icon.png');
@@ -58,14 +59,15 @@ export function MenuScreen({navigation, route}: Props): React.JSX.Element {
   const clear = useCartStore(s => s.clear);
 
   React.useEffect(() => {
+    const defaultTableId = resolveDefaultTableId(data?.storeTables ?? [], serviceType);
     if (
       !cart ||
-      cart.tableId !== KIOSK_ORDER_TABLE_ID ||
+      cart.tableId !== defaultTableId ||
       cart.type !== serviceType
     ) {
-      resetForServiceType(serviceType);
+      resetForServiceType(serviceType, defaultTableId);
     }
-  }, [cart, resetForServiceType, serviceType]);
+  }, [cart, data, resetForServiceType, serviceType]);
 
   const categories = useMemo(() => {
     const c = data?.categories ?? [];
@@ -90,13 +92,13 @@ export function MenuScreen({navigation, route}: Props): React.JSX.Element {
     const rows = data?.productPrices ?? [];
     const priced =
       rows.length > 0
-        ? priceProductsForTable(all, rows, KIOSK_ORDER_TABLE_ID)
+        ? priceProductsForTable(all, rows, cart?.tableId ?? KIOSK_ORDER_TABLE_ID)
         : all;
     if (activeCatId == null) {
       return priced;
     }
     return priced.filter(p => p.categoryId === activeCatId);
-  }, [data, activeCatId]);
+  }, [data, activeCatId, cart?.tableId]);
 
   const total = useMemo(() => {
     if (!cart) {
@@ -162,7 +164,7 @@ export function MenuScreen({navigation, route}: Props): React.JSX.Element {
           <Image
             source={imgSrc}
             style={styles.sideIcon}
-            resizeMode="contain"
+            resizeMode="cover"
             fadeDuration={Platform.OS === 'android' ? 0 : undefined}
           />
         ) : (
@@ -245,7 +247,7 @@ export function MenuScreen({navigation, route}: Props): React.JSX.Element {
                       style={[
                         styles.cardImagePlaceholder,
                         {
-                          height: cardWidth / PRODUCT_IMAGE_FALLBACK_ASPECT,
+                          height: cardWidth / PRODUCT_IMAGE_ASPECT_RATIO,
                         },
                       ]}
                     />
@@ -316,8 +318,9 @@ const styles = StyleSheet.create({
   menuTopBar: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     paddingLeft: 12,
-    paddingRight: 16,
+    paddingRight: 12,
     paddingTop: 6,
     paddingBottom: 10,
     backgroundColor: theme.color.bgSecondary,
@@ -327,7 +330,7 @@ const styles = StyleSheet.create({
     height: 100,
     maxWidth: '85%',
     flexShrink: 0,
-    marginLeft: 30,
+    marginLeft: 0,
   },
   body: {
     flex: 1,
@@ -368,16 +371,17 @@ const styles = StyleSheet.create({
   },
   /** No `tintColor` on remote photos; no border (user request). */
   sideIcon: {
-    width: 45,
-    height: 45,
+    width: 90,
+    height: 51,
     marginBottom: 5,
-    borderRadius: 5,
+    borderRadius: 8,
+    backgroundColor: theme.color.bgSecondary,
   },
   sideIconPlaceholder: {
-    width: 45,
-    height: 45,
+    width: 90,
+    height: 51,
     marginBottom: 5,
-    borderRadius: 5,
+    borderRadius: 8,
     backgroundColor: theme.color.pricePillBg,
   },
   sideText: {
@@ -421,10 +425,12 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
   },
-  /** Product tile — image area height = intrinsic aspect; no fill behind photo */
+  /** Product tile — fixed 16:9 image area so every card is the same height */
   card: {
     backgroundColor: theme.color.bgPrimary,
     borderRadius: theme.radius.card,
+    borderWidth: 1,
+    borderColor: theme.color.border,
     overflow: 'hidden',
     ...cardShadow,
   },

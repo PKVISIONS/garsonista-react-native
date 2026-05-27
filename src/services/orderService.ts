@@ -12,13 +12,47 @@ import {STORAGE_KEYS} from '@constants/config';
 export async function submitCartOnline(
   cart: Cart,
   ctx: BuildWireContext,
+  options?: {
+    paymentMethod?: 'cash' | 'card' | 'bank' | 'iris';
+    orderNumber?: number;
+    tipAmount?: number;
+  },
 ): Promise<ReturnType<typeof mapInsertOrdersResponse>> {
-  const wire = buildWireOrdersFromCart(cart, ctx);
+  const wire = buildWireOrdersFromCart(cart, ctx, options);
+  const paymentMethod = options?.paymentMethod ?? 'cash';
+  const totalAmount = cart.items.reduce((sum, item) => sum + item.lineTotal, 0);
+  const prebankVal =
+    paymentMethod === 'bank' ? totalAmount : paymentMethod === 'card' || paymentMethod === 'iris' ? totalAmount : 0;
+  const isIris = paymentMethod === 'iris' ? 1 : 0;
+  const isCredit = paymentMethod === 'card' ? 1 : 0;
   const form = new FormData();
+  form.append('ajax', 'true');
   form.append('select', 'insert_orders');
+  form.append('action', 'receipt');
+  form.append('app_src', 'kiosk');
   form.append('norders', JSON.stringify(wire));
+  form.append('prebank_val', String(prebankVal));
+  form.append('isiris', String(isIris));
+  form.append('iscredit', String(isCredit));
   form.append('semiL', String(ctx.semiLocal));
-  const text = await legacyPostText(getRuntimeConfig().catalogUrl, form);
+  form.append('user_id', String(ctx.userId));
+  form.append('novus_user', paymentMethod === 'cash' ? '0' : '1');
+  form.append('notaxdocs_tolocal_printer', '0');
+  form.append('idstore_pos', String(Number((ctx as Record<string, unknown>).idstore_pos ?? 0)));
+  form.append('aade_branchcode', String(Number((ctx as Record<string, unknown>).aade_branchcode ?? 0)));
+  form.append('tableid', String(ctx.tableId));
+  form.append('ismellon', String(Number((ctx as Record<string, unknown>).ismellon ?? 0)));
+  form.append('isvivacloud', String(Number((ctx as Record<string, unknown>).isvivacloud ?? 0)));
+  form.append('tid_nsp', String((ctx as Record<string, unknown>).tid_nsp ?? ''));
+  form.append('always_receipt_final', String(Number((ctx as Record<string, unknown>).always_receipt_final ?? 0)));
+  form.append('tipAmount', String(options?.tipAmount ?? 0));
+  form.append('user', String(ctx.userLogin));
+  form.append('p', String(ctx.password));
+  const baseUrl =
+    ctx.localIp !== '' && ctx.semiLocal === 0
+      ? ctx.localIp
+      : getRuntimeConfig().orderUrl;
+  const text = await legacyPostText(baseUrl, form);
   return mapInsertOrdersResponse(text, cart);
 }
 

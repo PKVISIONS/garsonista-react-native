@@ -21,6 +21,7 @@ import type {RootStackParamList} from '@navigation/types';
 import {useAuthStore, useCartStore} from '@store';
 import {kioskTopBrandLogo, shadowChoiceCard, theme} from '@theme/kiosk';
 import {kioskLogoImageUri, remoteUriSource} from '@utils/productImage';
+import {createPosClientUnid} from '@utils/posClientUnid';
 import {translate} from '../../stores/Localization/LocalizationStore';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PaymentMethod'>;
@@ -49,6 +50,12 @@ export function PaymentMethodScreen({navigation}: Props): React.JSX.Element {
     ? remoteUriSource(brandLogoUri)
     : kioskBrandLogoFallback;
   const cart = useCartStore(s => s.cart);
+  const total = useMemo(() => {
+    if (!cart) {
+      return 0;
+    }
+    return cart.items.reduce((sum, item) => sum + item.lineTotal, 0);
+  }, [cart]);
   const {width} = useWindowDimensions();
   const cardGap = 14;
   const horizontalPad = Math.max(24, Math.round(width * 0.08));
@@ -86,7 +93,11 @@ export function PaymentMethodScreen({navigation}: Props): React.JSX.Element {
                 pressed && styles.choicePressed,
               ]}
               android_ripple={{color: 'rgba(0,0,0,0.06)'}}
-              onPress={() => navigation.navigate(ROUTES.TransactionReceipt)}>
+              onPress={() =>
+                navigation.navigate(ROUTES.TransactionReceipt, {
+                  paymentMethod: 'cash',
+                })
+              }>
               <KioskPaymentIcon variant="cash" />
               <Text style={styles.choiceText}>{translate('kiosk.pay.cash')}</Text>
             </Pressable>
@@ -98,7 +109,12 @@ export function PaymentMethodScreen({navigation}: Props): React.JSX.Element {
                 pressed && styles.choicePressed,
               ]}
               android_ripple={{color: 'rgba(0,0,0,0.06)'}}
-              onPress={() => navigation.navigate(ROUTES.TransactionReceipt)}>
+              onPress={() =>
+                navigation.navigate(ROUTES.PaymentCard, {
+                  amountEuros: total,
+                  clientTransactionId: createPosClientUnid(),
+                })
+              }>
               <KioskPaymentIcon variant="card" />
               <Text style={styles.choiceText}>{translate('kiosk.pay.card')}</Text>
             </Pressable>

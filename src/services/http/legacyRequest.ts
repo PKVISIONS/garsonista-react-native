@@ -49,6 +49,12 @@ export async function legacyPostText(url: string, form: FormData): Promise<strin
       (typeof globalThis.performance?.now === 'function'
         ? globalThis.performance.now()
         : Date.now()) - t0;
+    if (selectHint === 'insert_orders') {
+      console.log(
+        `[Garsonista HTTP] RESPONSE ${Math.round(ms)}ms select=${selectHint} host=${new URL(url).host} body=`,
+        text,
+      );
+    }
     if (!res.ok) {
       recordLegacyPost(url, selectHint, ms, false);
       recorded = true;

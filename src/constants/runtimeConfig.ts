@@ -1,8 +1,10 @@
 import {API_BASE_URL} from './config';
 
 export type RuntimeConfig = {
-  /** POST target for catalog / orders (service_go_v156 or local server). */
+  /** POST target for catalog reads (service_go_v156 or local server). */
   catalogUrl: string;
+  /** POST target for order submit/update flow (service_go_v166 or local server). */
+  orderUrl: string;
   /** POST target for `seek_afm` (`main_plugins/`). */
   pluginsUrl: string;
   /** POST target for login (service_go_v150). */
@@ -15,6 +17,7 @@ function apiBaseWithTrailingSlash(): string {
 
 let config: RuntimeConfig = {
   catalogUrl: `${apiBaseWithTrailingSlash()}service_go_v156/`,
+  orderUrl: `${apiBaseWithTrailingSlash()}service_go_v166/`,
   pluginsUrl: `${apiBaseWithTrailingSlash()}main_plugins/`,
   authUrl: `${apiBaseWithTrailingSlash()}service_go_v150/`,
 };
@@ -36,12 +39,14 @@ export function setRuntimeConfigFromWireRow(row: Record<string, unknown>): void 
     const base = localIp.endsWith('/') ? localIp : `${localIp}/`;
     config = {
       catalogUrl: localIp,
+      orderUrl: localIp,
       pluginsUrl: `${base}main_plugins/`,
       authUrl: `${root}service_go_v150/`,
     };
   } else {
     config = {
       catalogUrl: `${root}service_go_v156/`,
+      orderUrl: `${root}service_go_v166/`,
       pluginsUrl: `${root}main_plugins/`,
       authUrl: `${root}service_go_v150/`,
     };
@@ -52,6 +57,7 @@ export function resetRuntimeConfig(): void {
   const root = apiBaseWithTrailingSlash();
   config = {
     catalogUrl: `${root}service_go_v156/`,
+    orderUrl: `${root}service_go_v166/`,
     pluginsUrl: `${root}main_plugins/`,
     authUrl: `${root}service_go_v150/`,
   };

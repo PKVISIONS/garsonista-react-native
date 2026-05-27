@@ -1,9 +1,8 @@
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import React from 'react';
+import React, {useEffect, useRef} from 'react';
 import {Linking, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import type {RootStackParamList} from '@navigation/types';
 import {buildVivaPaymentUri} from '@services/payment/vivaDeepLink';
-import {createId} from '@utils/id';
 import {usePaymentStore} from '@store';
 import {theme, titleSection} from '@theme/kiosk';
 import {translate} from '../../stores/Localization/LocalizationStore';
@@ -11,25 +10,22 @@ import {translate} from '../../stores/Localization/LocalizationStore';
 type Props = NativeStackScreenProps<RootStackParamList, 'PaymentCard'>;
 
 export function PaymentCardScreen({route}: Props): React.JSX.Element {
-  const {amountEuros} = route.params;
+  const {amountEuros, fiscalisationData, clientTransactionId} = route.params;
   const setPhase = usePaymentStore(s => s.setPhase);
   const setError = usePaymentStore(s => s.setError);
+  const launchedRef = useRef(false);
 
   const launch = async () => {
     setError(null);
     setPhase('initiating');
-    const clientTransactionId = createId();
     const uri = buildVivaPaymentUri({
       clientTransactionId,
       amountEuros,
     });
     try {
+      console.log('[Viva] Launch URI:', uri);
       const can = await Linking.canOpenURL(uri);
-      if (!can) {
-        setPhase('failed');
-        setError(translate('kiosk.paymentCard.vivaUnavailable'));
-        return;
-      }
+      console.log('[Viva] canOpenURL:', can);
       setPhase('awaiting_app');
       await Linking.openURL(uri);
     } catch (e) {
@@ -37,6 +33,14 @@ export function PaymentCardScreen({route}: Props): React.JSX.Element {
       setError(String(e));
     }
   };
+
+  useEffect(() => {
+    if (launchedRef.current) {
+      return;
+    }
+    launchedRef.current = true;
+    void launch();
+  }, []);
 
   return (
     <View style={styles.box}>

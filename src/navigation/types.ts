@@ -7,9 +7,13 @@ export type RootStackParamList = {
   OrderReview: undefined;
   ProductDetail: {productId: number};
   PaymentMethod: undefined;
-  PaymentCard: {amountEuros: number};
+  PaymentCard: {
+    amountEuros: number;
+    clientTransactionId: string;
+    fiscalisationData?: string;
+  };
   PaymentBank: undefined;
-  TransactionReceipt: undefined;
+  TransactionReceipt: {paymentMethod?: 'cash' | 'card'} | undefined;
   OrderComplete: undefined;
   CardFailed: undefined;
   TaxCustomer: undefined;

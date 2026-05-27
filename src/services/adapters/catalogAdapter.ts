@@ -7,23 +7,7 @@ function num(v: unknown, fallback = 0): number {
 }
 
 /** First usable image field from legacy row (SQL column names vary). */
-function pickImageUrl(o: Record<string, unknown>): string | null {
-  const keys = [
-    'image1',
-    'image2',
-    'value_image',
-    'imageurl',
-    'image_url',
-    'value_imageurl',
-    'image',
-    'photo',
-    'picture',
-    'img',
-    'imagepath',
-    'image_path',
-    'imagename',
-    'photo_url',
-  ];
+function pickImageUrl(o: Record<string, unknown>, keys: string[]): string | null {
   for (const k of keys) {
     const v = o[k];
     if (v == null) {
@@ -37,14 +21,82 @@ function pickImageUrl(o: Record<string, unknown>): string | null {
   return null;
 }
 
+function pickCategoryImageUrl(o: Record<string, unknown>): string | null {
+  return pickImageUrl(o, ['image1', 'cimage1', 'aimage', 'image']);
+}
+
+function pickProductImageUrl(o: Record<string, unknown>): string | null {
+  return pickImageUrl(o, [
+    'image1',
+    'image2',
+    'image3',
+    'image4',
+    'value_image',
+    'imageurl',
+    'image_url',
+    'imageuri',
+    'image_uri',
+    'value_imageurl',
+    'image',
+    'photo',
+    'photo1',
+    'photo2',
+    'picture',
+    'img',
+    'img_url',
+    'imgurl',
+    'imagepath',
+    'image_path',
+    'imagefile',
+    'image_file',
+    'imagename',
+    'photo_url',
+    'icon',
+    'icon_url',
+    'iconurl',
+    'thumbnail',
+    'thumbnail_url',
+    'thumb',
+    'thumb_url',
+    'kiosk_image1',
+    'kiosk_image2',
+    'kiosk_image3',
+    'logo_new_image',
+  ]);
+}
+
 /** Backend placeholder row — hide from UI. */
 function isPlaceholderCategoryName(name: string): boolean {
   return name.trim().toLowerCase() === 'χωρίς κύρια κατηγορία';
 }
 
+function applyCategoryImageFallback(
+  categories: Category[],
+  products: Product[],
+): Category[] {
+  const byCategory = new Map<number, string>();
+  for (const product of products) {
+    if (byCategory.has(product.categoryId)) {
+      continue;
+    }
+    if (product.imageUrl) {
+      byCategory.set(product.categoryId, product.imageUrl);
+    }
+  }
+
+  return categories.map(category => {
+    if (category.imageUrl) {
+      return category;
+    }
+    const imageUrl = byCategory.get(category.id);
+    return imageUrl ? {...category, imageUrl} : category;
+  });
+}
+
 export function mapMainAndSubCategories(
   mainRaw: unknown,
   subRaw: unknown,
+  products?: Product[],
 ): Category[] {
   const main = parseJsonArray(mainRaw).map((c: unknown) => {
     const o = c as Record<string, unknown>;
@@ -56,7 +108,7 @@ export function mapMainAndSubCategories(
           ? o.descr_en.trim()
           : null,
       parentId: null as number | null,
-      imageUrl: pickImageUrl(o),
+      imageUrl: pickCategoryImageUrl(o),
       sortOrder: num(o.aorder, 0),
     };
   });
@@ -70,11 +122,12 @@ export function mapMainAndSubCategories(
           ? o.descr_en.trim()
           : null,
       parentId: num(o.idproduct_main_category) || null,
-      imageUrl: pickImageUrl(o),
+      imageUrl: pickCategoryImageUrl(o),
       sortOrder: num(o.aorder, 0),
     };
   });
-  return [...main, ...sub].filter(c => !isPlaceholderCategoryName(c.name));
+  const categories = [...main, ...sub].filter(c => !isPlaceholderCategoryName(c.name));
+  return products ? applyCategoryImageFallback(categories, products) : categories;
 }
 
 /**
@@ -104,7 +157,7 @@ export function mapProducts(raw: unknown): Product[] {
           ? o.descr_en.trim()
           : null,
       categoryId: num(o.idcategory),
-      imageUrl: pickImageUrl(o),
+      imageUrl: pickProductImageUrl(o),
       longDescription,
       longDescriptionEn,
       basePrice,
@@ -226,7 +279,7 @@ export function mapOptionGroups(raw: unknown): OptionGroup[] {
                   ? ov.value_descr_en.trim()
                   : null,
               priceDelta: optionValuePrice(ov),
-              imageUrl: pickImageUrl(ov),
+              imageUrl: pickProductImageUrl(ov),
             };
           }),
         };
@@ -265,7 +318,7 @@ export function mapOptionGroups(raw: unknown): OptionGroup[] {
             ? o.value_descr_en.trim()
             : null,
         priceDelta: optionValuePrice(o),
-        imageUrl: pickImageUrl(o),
+        imageUrl: pickProductImageUrl(o),
       };
       g.values.push(val);
     }
