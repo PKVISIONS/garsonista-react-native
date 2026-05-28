@@ -1,8 +1,6 @@
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import React from 'react';
 import {
-  ImageBackground,
-  Platform,
   Pressable,
   StatusBar,
   StyleSheet,
@@ -11,11 +9,10 @@ import {
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import {KioskSplashLayout} from '../KioskSplashLayout';
 import {ROUTES} from '@constants/routes';
 import type {RootStackParamList} from '@navigation/types';
-import {splashBackgroundImage} from '@screens/StartScreen';
 import {useAuthStore} from '@store';
-import {kioskSplashImageUri, remoteUriSource} from '@utils/productImage';
 import {theme} from '@theme/kiosk';
 import {LanguageSelector} from '../LanguageSelector';
 import {translate} from '../../stores/Localization/LocalizationStore';
@@ -28,8 +25,6 @@ export function PlaceOrderScreen(): React.JSX.Element {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const wireRow = useAuthStore(s => s.wireRow);
-  const splashUri = kioskSplashImageUri(wireRow);
-  const bgSource = splashUri ? remoteUriSource(splashUri) : splashBackgroundImage;
 
   const goToDiningChoice = () => {
     navigation.navigate(ROUTES.DiningChoice);
@@ -42,12 +37,7 @@ export function PlaceOrderScreen(): React.JSX.Element {
         translucent
         backgroundColor="transparent"
       />
-      <ImageBackground
-        source={bgSource}
-        style={styles.image}
-        resizeMode="cover"
-        resizeMethod="resize"
-        fadeDuration={Platform.OS === 'android' ? 0 : undefined}>
+      <KioskSplashLayout wireRow={wireRow} logTag="PlaceOrder" style={styles.image}>
         <Pressable
           style={styles.tapRoot}
           onPress={goToDiningChoice}
@@ -73,7 +63,7 @@ export function PlaceOrderScreen(): React.JSX.Element {
             </View>
           </SafeAreaView>
         </Pressable>
-      </ImageBackground>
+      </KioskSplashLayout>
     </View>
   );
 }
@@ -88,7 +78,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  /** Full-screen hit target: tap outside language + CTA still advances */
   tapRoot: {
     flex: 1,
   },

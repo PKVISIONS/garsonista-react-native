@@ -19,6 +19,8 @@
     "axios": "^1.15.0",
     "expo": "~55.0.19",
     "expo-dev-client": "~55.0.30",
+    "expo-file-system": "~55.0.22",
+    "expo-image": "~55.0.0",
     "mobx": "^6.15.0",
     "mobx-react-lite": "^4.1.1",
     "react": "19.2.0",

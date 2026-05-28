@@ -67,35 +67,13 @@ export async function submitCartOnline(
     );
     if (first) {
       console.log(
-        '[VivaFlow] insert_orders first norder snapshot=',
-        JSON.stringify(
-          {
-            tableid: first.tableid,
-            productid: first.productid,
-            aqty: first.aqty,
-            val: first.val,
-            aval: first.aval,
-            isiris: first.isiris,
-            iscredit: first.iscredit,
-            isprepaid: first.isprepaid,
-            auto_receipt: first.auto_receipt,
-            auto_receipt_switch: first.auto_receipt_switch,
-            ispaid: first.ispaid,
-            precash_val: first.precash_val,
-            precard_val: first.precard_val,
-            prebank_val: first.prebank_val,
-            precash_val_tot: first.precash_val_tot,
-            precard_val_tot: first.precard_val_tot,
-            prebank_val_tot: first.prebank_val_tot,
-            tips: first.tips,
-            POSclientUNID: first.POSclientUNID,
-            byME: first.byME,
-            novus_user: first.novus_user,
-            user_login: first.user_login,
-          },
-          null,
-          0,
-        ),
+        `[VivaFlow] insert_orders first norder tableid=${String(
+          first.tableid ?? '',
+        )} productid=${String(first.productid ?? '')} iscredit=${String(
+          first.iscredit ?? '',
+        )} isprepaid=${String(first.isprepaid ?? '')} precard_val_tot=${String(
+          first.precard_val_tot ?? '',
+        )} posClient=${String(first.POSclientUNID ?? '')}`,
       );
     }
   }

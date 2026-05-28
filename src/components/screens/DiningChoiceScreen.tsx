@@ -7,14 +7,40 @@ import type {RootStackParamList} from '@navigation/types';
 import {useAuthStore} from '@store';
 import {kioskTopBrandLogo, theme, shadowChoiceCard} from '@theme/kiosk';
 import {kioskLogoImageUri, remoteUriSource} from '@utils/productImage';
+import {prepareCartForMenu} from '@utils/menuPreload';
 import {translate} from '../../stores/Localization/LocalizationStore';
 
 type Props = NativeStackScreenProps<RootStackParamList, typeof ROUTES.DiningChoice>;
 
 const dineInImg = require('../../assets/images/kiosk_dinein.png');
 const takeAwayImg = require('../../assets/images/takeaway_kiosk.png');
-/** Same as `MenuScreen` / Order review — `kiosk_image3` + `garsonista-kiosk-logo` fallback */
 const kioskBrandLogoFallback = require('../../assets/images/garsonista-kiosk-logo.png');
+
+function DiningChoiceCard({
+  label,
+  icon,
+  onPress,
+}: {
+  label: string;
+  icon: number;
+  onPress: () => void;
+}): React.JSX.Element {
+  return (
+    <Pressable
+      style={({pressed}) => [styles.card, pressed && styles.cardPressed]}
+      onPress={onPress}>
+      <View style={styles.cardIconWrap}>
+        <Image
+          source={icon}
+          style={styles.cardIcon}
+          resizeMode="contain"
+          fadeDuration={Platform.OS === 'android' ? 0 : undefined}
+        />
+      </View>
+      <Text style={styles.cardLabel}>{label}</Text>
+    </Pressable>
+  );
+}
 
 export function DiningChoiceScreen({navigation}: Props): React.JSX.Element {
   const wireRow = useAuthStore(s => s.wireRow);
@@ -22,6 +48,11 @@ export function DiningChoiceScreen({navigation}: Props): React.JSX.Element {
   const topBrandSource = brandLogoUri
     ? remoteUriSource(brandLogoUri)
     : kioskBrandLogoFallback;
+
+  const openMenu = (serviceType: 'dine-in' | 'takeaway') => {
+    prepareCartForMenu(serviceType);
+    navigation.navigate(ROUTES.Menu, {serviceType});
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -38,30 +69,16 @@ export function DiningChoiceScreen({navigation}: Props): React.JSX.Element {
         <View style={styles.centeredContent}>
           <Text style={styles.question}>{translate('kiosk.dining.question')}</Text>
           <View style={styles.cardsRow}>
-            <Pressable
-              style={({pressed}) => [styles.card, pressed && styles.cardPressed]}
-              onPress={() =>
-                navigation.navigate(ROUTES.Menu, {serviceType: 'dine-in'})
-              }>
-              <Image
-                source={dineInImg}
-                style={styles.cardIcon}
-                resizeMode="contain"
-              />
-              <Text style={styles.cardLabel}>{translate('kiosk.dining.dineIn')}</Text>
-            </Pressable>
-            <Pressable
-              style={({pressed}) => [styles.card, pressed && styles.cardPressed]}
-              onPress={() =>
-                navigation.navigate(ROUTES.Menu, {serviceType: 'takeaway'})
-              }>
-              <Image
-                source={takeAwayImg}
-                style={styles.cardIcon}
-                resizeMode="contain"
-              />
-              <Text style={styles.cardLabel}>{translate('kiosk.dining.takeaway')}</Text>
-            </Pressable>
+            <DiningChoiceCard
+              label={translate('kiosk.dining.dineIn')}
+              icon={dineInImg}
+              onPress={() => openMenu('dine-in')}
+            />
+            <DiningChoiceCard
+              label={translate('kiosk.dining.takeaway')}
+              icon={takeAwayImg}
+              onPress={() => openMenu('takeaway')}
+            />
           </View>
         </View>
       </View>
@@ -107,30 +124,38 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   card: {
-    flex: 1,
-    minWidth: 280,
+    flexGrow: 1,
+    flexShrink: 0,
+    flexBasis: 280,
     minHeight: 300,
     maxWidth: 380,
     backgroundColor: theme.color.bgPrimary,
     borderRadius: theme.radius.large,
-    padding: 10,
+    paddingHorizontal: 10,
+    paddingTop: 24,
+    paddingBottom: 20,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     ...shadowChoiceCard,
   },
   cardPressed: {
     opacity: 0.92,
   },
+  cardIconWrap: {
+    flex: 1,
+    width: '100%',
+    minHeight: 160,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   cardIcon: {
-    width: 120,
-    height: 100,
-    marginBottom: 10,
+    width: 160,
+    height: 140,
   },
   cardLabel: {
     fontSize: 22,
     fontWeight: '700',
     color: theme.color.textPrimary,
-    marginTop: 10,
     textAlign: 'center',
   },
 });

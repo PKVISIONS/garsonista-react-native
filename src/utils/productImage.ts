@@ -1,37 +1,20 @@
+import {Image as ExpoImage} from 'expo-image';
 import {Platform} from 'react-native';
-import {API_BASE_URL} from '@constants/config';
+import {API_BASE_URL, STORAGE_KEYS} from '@constants/config';
+import {mmkv} from '../storage/mmkv';
+import {splashImageHeaders} from './splashImage';
 
-let _agentH1State: string | null = null;
 /** Login payload field used for static uploads host (legacy web client). */
 export function imagesBaseUrlFromWireRow(
   wireRow: Record<string, unknown> | null | undefined,
 ): string | null {
   if (!wireRow) {
-    // #region agent log
-    if (_agentH1State !== 'no-wire') {
-      _agentH1State = 'no-wire';
-      fetch('http://127.0.0.1:7806/ingest/a1837756-80df-4bbf-b9af-46808b0f37e2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'616b00'},body:JSON.stringify({sessionId:'616b00',hypothesisId:'H1',location:'productImage.ts:imagesBaseUrlFromWireRow',message:'wireRow missing',data:{hasWireRow:false},timestamp:Date.now()})}).catch(()=>{});
-    }
-    // #endregion
     return null;
   }
   const v = wireRow.images_url;
   if (typeof v === 'string' && v.trim()) {
-    const out = v.trim();
-    // #region agent log
-    if (_agentH1State !== 'ok') {
-      _agentH1State = 'ok';
-      fetch('http://127.0.0.1:7806/ingest/a1837756-80df-4bbf-b9af-46808b0f37e2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'616b00'},body:JSON.stringify({sessionId:'616b00',hypothesisId:'H1',location:'productImage.ts:imagesBaseUrlFromWireRow',message:'base from login',data:{hasWireRow:true,images_url_len:out.length,preview:out.slice(0,80)},timestamp:Date.now()})}).catch(()=>{});
-    }
-    // #endregion
-    return out;
+    return v.trim();
   }
-  // #region agent log
-  if (_agentH1State !== 'bad-url') {
-    _agentH1State = 'bad-url';
-    fetch('http://127.0.0.1:7806/ingest/a1837756-80df-4bbf-b9af-46808b0f37e2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'616b00'},body:JSON.stringify({sessionId:'616b00',hypothesisId:'H1',location:'productImage.ts:imagesBaseUrlFromWireRow',message:'images_url empty/invalid',data:{images_url_type:typeof v,keys:Object.keys(wireRow).slice(0,20)},timestamp:Date.now()})}).catch(()=>{});
-  }
-  // #endregion
   return null;
 }
 
@@ -86,34 +69,152 @@ export function resolveProductImageUri(
 }
 
 /**
- * Remote image `source` object with Android cache hint so decoded bitmaps reuse
- * the disk cache instead of flashing on every remount.
+ * Remote HTTP(S) image source with optional Android cache hint.
+ * Local `file://` / `content://` URIs must not use cache flags — Fresco fails on remount.
  */
-export function remoteUriSource(uri: string): {
+export function remoteUriSource(
+  uri: string,
+  options?: {reload?: boolean},
+): {
   uri: string;
   cache?: 'default' | 'reload' | 'force-cache' | 'only-if-cached';
 } {
-  if (Platform.OS === 'android') {
-    return {uri, cache: 'default'};
+  if (/^(file|content):\/\//i.test(uri)) {
+    return {uri};
   }
-  return {uri};
+  if (options?.reload) {
+    return Platform.OS === 'android'
+      ? {uri, cache: 'reload'}
+      : {uri};
+  }
+  const cached = remoteSourceCache.get(uri);
+  if (cached) {
+    return cached;
+  }
+  const source =
+    Platform.OS === 'android'
+      ? {uri, cache: 'default' as const}
+      : {uri};
+  remoteSourceCache.set(uri, source);
+  return source;
 }
 
-/** For React Native `<Image source={...} />`. */
-let _agentPicLogN = 0;
+const remoteSourceCache = new Map<
+  string,
+  {uri: string; cache?: 'default' | 'reload' | 'force-cache' | 'only-if-cached'}
+>();
+const prefetchedUris = new Set<string>();
+const inflightProductPrefetch = new Map<string, Promise<boolean>>();
+let lastGoodSplashUri: string | null = null;
+
+/** expo-image source for catalog photos — headers must match prefetch for cache hits. */
+export function productImageExpoSource(uri: string): {
+  uri: string;
+  headers: Record<string, string>;
+} {
+  return {uri, headers: splashImageHeaders(uri)};
+}
+
+/** One prefetch per URI into expo-image memory/disk cache (matches `ProductGridImage`). */
+export function prefetchProductImageOnce(
+  uri: string | null | undefined,
+): Promise<boolean> {
+  const url = typeof uri === 'string' ? uri.trim() : '';
+  if (!url) {
+    return Promise.resolve(false);
+  }
+  if (prefetchedUris.has(url)) {
+    return Promise.resolve(true);
+  }
+  const pending = inflightProductPrefetch.get(url);
+  if (pending) {
+    return pending;
+  }
+  const job = ExpoImage.prefetch(url, {
+    cachePolicy: 'memory-disk',
+    headers: splashImageHeaders(url),
+  })
+    .then(ok => {
+      if (ok) {
+        prefetchedUris.add(url);
+      }
+      return ok;
+    })
+    .finally(() => {
+      inflightProductPrefetch.delete(url);
+    });
+  inflightProductPrefetch.set(url, job);
+  return job;
+}
+
+/** Best-effort one-time prefetch for remote images to reduce category-switch flashes. */
+export function warmRemoteImageCache(uris: Array<string | null | undefined>): void {
+  for (const raw of uris) {
+    void prefetchProductImageOnce(raw).catch(() => {
+      /* best-effort */
+    });
+  }
+}
+
+export function clearRememberedSplashUri(): void {
+  lastGoodSplashUri = null;
+  mmkv.remove(STORAGE_KEYS.lastGoodSplashUri);
+}
+
+export function rememberGoodSplashUri(uri: string | null | undefined): void {
+  const v = typeof uri === 'string' ? uri.trim() : '';
+  if (v) {
+    lastGoodSplashUri = v;
+    mmkv.set(STORAGE_KEYS.lastGoodSplashUri, v);
+    if (__DEV__) {
+      console.log(`[SplashImage] rememberGoodSplashUri uri=${v.slice(0, 180)}`);
+    }
+  }
+}
+
+export function getRememberedSplashUri(): string | null {
+  if (lastGoodSplashUri) {
+    if (__DEV__) {
+      console.log('[SplashImage] getRememberedSplashUri source=memory');
+    }
+    return lastGoodSplashUri;
+  }
+  const persisted = mmkv.getString(STORAGE_KEYS.lastGoodSplashUri) ?? null;
+  if (persisted && persisted.trim()) {
+    lastGoodSplashUri = persisted.trim();
+    if (__DEV__) {
+      console.log('[SplashImage] getRememberedSplashUri source=mmkv');
+    }
+    return lastGoodSplashUri;
+  }
+  if (__DEV__) {
+    console.log('[SplashImage] getRememberedSplashUri source=empty');
+  }
+  return null;
+}
+
+export function deriveApiHostUploadsFallback(
+  uri: string | null | undefined,
+): string | null {
+  const v = typeof uri === 'string' ? uri.trim() : '';
+  if (!v) {
+    return null;
+  }
+  const idx = v.indexOf('/uploads/');
+  if (idx < 0) {
+    return null;
+  }
+  const path = v.slice(idx);
+  const base = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+  const alt = `${base}${path}`;
+  return alt === v ? null : alt;
+}
+
 export function productImageSource(
   raw: string | null | undefined,
   imagesBaseUrl?: string | null,
 ): ReturnType<typeof remoteUriSource> | null {
   const uri = resolveProductImageUri(raw, imagesBaseUrl);
-  // #region agent log
-  if (_agentPicLogN < 6) {
-    _agentPicLogN++;
-    const sch =
-      uri && /^https?:/i.test(uri) ? (uri.startsWith('https') ? 'https' : 'http') : uri ? 'other' : null;
-    fetch('http://127.0.0.1:7806/ingest/a1837756-80df-4bbf-b9af-46808b0f37e2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'616b00'},body:JSON.stringify({sessionId:'616b00',hypothesisId:'H2',location:'productImage.ts:productImageSource',message:'resolve product image',data:{n:_agentPicLogN,rawPreview:raw?String(raw).slice(0,100):null,hasBase:!!imagesBaseUrl,uri:uri?uri.slice(0,160):null,scheme:sch},timestamp:Date.now()})}).catch(()=>{});
-  }
-  // #endregion
   return uri ? remoteUriSource(uri) : null;
 }
 
@@ -156,7 +257,15 @@ export function kioskSplashImageUri(
   if (!path) {
     return null;
   }
-  return resolveProductImageUri(path, base);
+  const resolved = resolveProductImageUri(path, base);
+  if (__DEV__) {
+    console.log(
+      `[SplashImage] kioskSplashImageUri orientation=${String(
+        o,
+      )} path=${String(path).slice(0, 120)} resolved=${String(resolved ?? '').slice(0, 180)}`,
+    );
+  }
+  return resolved;
 }
 
 /** Cordova: `kiosk_image3` → `.logo_new_image` src (`images_url + kiosk_image3`). */

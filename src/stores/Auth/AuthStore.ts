@@ -9,6 +9,7 @@ import {RestoreSessionUseCase} from '../../core/useCases/RestoreSessionUseCase';
 import {authRepository} from '../../repositories/AuthRepository';
 import {catalogRepository} from '../../repositories/CatalogRepository';
 import {clearImageAspectCache} from '../../utils/imageAspectCache';
+import {useMenuPreloadStore} from '../MenuPreload/MenuPreloadStore';
 import {mmkvStorage} from '../../storage/mmkv';
 import {useCatalogStore} from '../Catalog/CatalogStore';
 
@@ -58,6 +59,7 @@ export const useAuthStore = create<AuthState>()(
           .then(() => {
             useCatalogStore.getState().clear();
             clearImageAspectCache();
+            useMenuPreloadStore.getState().reset();
             mmkvStorage.removeItem(STORAGE_KEYS.authPersist);
             set({
               session: null,

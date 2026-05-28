@@ -2,6 +2,7 @@ import type {AuthSession} from '@models/auth';
 import type {IAuthRepository} from '../domain/repositories/IAuthRepository';
 import type {ICatalogRepository} from '../domain/repositories/ICatalogRepository';
 import type {CatalogBootstrap} from '@services/catalogService';
+import {warmMenuExperience} from '@utils/menuPreload';
 
 export interface RestoreSessionInput {
   credentials: {user: string; password: string} | null;
@@ -34,9 +35,7 @@ export class RestoreSessionUseCase {
         return this.catalogRepository
           .fetchBootstrap()
           .then(catalog =>
-            this.catalogRepository
-              .warmMenuImages(catalog, wireRow)
-              .then(() => ({catalog})),
+            warmMenuExperience(catalog, wireRow).then(() => ({catalog})),
           )
           .catch(() => ({catalog: null}));
       });

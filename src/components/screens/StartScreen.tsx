@@ -1,8 +1,6 @@
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import React, {useEffect} from 'react';
 import {
-  ImageBackground,
-  Platform,
   Pressable,
   StatusBar,
   StyleSheet,
@@ -11,28 +9,25 @@ import {
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import {KioskSplashLayout} from '../KioskSplashLayout';
 import {ROUTES} from '@constants/routes';
 import type {RootStackParamList} from '@navigation/types';
 import {useAuthStore} from '@store';
 import {theme} from '@theme/kiosk';
+import {kioskSplashImageUri} from '@utils/productImage';
 import {logRemoteImageDiagnostics} from '@utils/imageDebug';
-import {kioskSplashImageUri, remoteUriSource} from '@utils/productImage';
 import {LanguageSelector} from '../LanguageSelector';
 import {translate} from '../../stores/Localization/LocalizationStore';
 
-/** Duck Fried Chicken splash (hero + logo) — bundled asset, not the API. */
-export const splashBackgroundImage = require('../../assets/images/burger-splash.png');
-
 /**
  * First screen: full-bleed background image + CTA button together.
- * Image source: `kiosk_image1` from wireRow, falls back to bundled asset.
+ * Image source: `kiosk_image1` from wireRow.
  */
 export function StartScreen(): React.JSX.Element {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const wireRow = useAuthStore(s => s.wireRow);
   const splashUri = kioskSplashImageUri(wireRow);
-  const bgSource = splashUri ? remoteUriSource(splashUri) : splashBackgroundImage;
 
   useEffect(() => {
     void logRemoteImageDiagnostics(splashUri ?? '', 'start_kiosk_splash');
@@ -41,12 +36,7 @@ export function StartScreen(): React.JSX.Element {
   return (
     <View style={styles.root}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      <ImageBackground
-        source={bgSource}
-        style={styles.image}
-        resizeMode="cover"
-        resizeMethod="resize"
-        fadeDuration={Platform.OS === 'android' ? 0 : undefined}>
+      <KioskSplashLayout wireRow={wireRow} logTag="Start" style={styles.image}>
         <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
           <LanguageSelector style={styles.langRow} />
           <View style={styles.flexSpacer} />
@@ -66,7 +56,7 @@ export function StartScreen(): React.JSX.Element {
             </Pressable>
           </View>
         </SafeAreaView>
-      </ImageBackground>
+      </KioskSplashLayout>
     </View>
   );
 }

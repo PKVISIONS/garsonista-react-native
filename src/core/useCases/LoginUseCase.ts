@@ -4,6 +4,7 @@ import type {
 } from '../domain/repositories/IAuthRepository';
 import type {ICatalogRepository} from '../domain/repositories/ICatalogRepository';
 import type {CatalogBootstrap} from '@services/catalogService';
+import {warmMenuExperience} from '@utils/menuPreload';
 
 export interface LoginInput {
   email: string;
@@ -36,9 +37,10 @@ export class LoginUseCase {
         this.catalogRepository
           .fetchBootstrap()
           .then(catalog =>
-            this.catalogRepository
-              .warmMenuImages(catalog, loginBundle.wireRow)
-              .then(() => ({...loginBundle, catalog})),
+            warmMenuExperience(catalog, loginBundle.wireRow).then(() => ({
+              ...loginBundle,
+              catalog,
+            })),
           )
           .catch(() => ({...loginBundle, catalog: null})),
       );

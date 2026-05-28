@@ -1,18 +1,17 @@
-import {Image} from 'react-native';
 import type {ICatalogRepository} from '../core/domain/repositories/ICatalogRepository';
 import {
   fetchCatalogBootstrap,
   type CatalogBootstrap,
 } from '../services/catalogService';
-import {setCachedImageAspect} from '../utils/imageAspectCache';
 import {
   imagesBaseUrlFromWireRow,
   kioskLogoImageUri,
   kioskSplashImageUri,
+  prefetchProductImageOnce,
   resolveProductImageUri,
+  warmRemoteImageCache,
 } from '../utils/productImage';
-
-const PREFETCH_CONCURRENCY = 8;
+import {prefetchKioskSplash} from '../utils/splashImage';
 
 function collectAllImageUris(
   catalog: CatalogBootstrap,
@@ -44,42 +43,27 @@ function collectAllImageUris(
   return Array.from(uris);
 }
 
-async function prefetchAndPrimeAspect(uri: string): Promise<void> {
-  try {
-    await Image.prefetch(uri);
-  } catch {
-    return;
-  }
-  await new Promise<void>(resolve => {
-    Image.getSize(
-      uri,
-      (w, h) => {
-        if (w > 0 && h > 0) {
-          setCachedImageAspect(uri, w / h);
-        }
-        resolve();
-      },
-      () => resolve(),
-    );
-  });
-}
-
-async function prefetchAllUris(uris: string[]): Promise<void> {
-  for (let i = 0; i < uris.length; i += PREFETCH_CONCURRENCY) {
-    const batch = uris.slice(i, i + PREFETCH_CONCURRENCY);
-    await Promise.all(batch.map(u => prefetchAndPrimeAspect(u)));
-  }
-}
-
 export class CatalogRepository implements ICatalogRepository {
   fetchBootstrap = (): Promise<CatalogBootstrap> => fetchCatalogBootstrap();
 
-  warmMenuImages = (
+  warmMenuImages = async (
     catalog: CatalogBootstrap,
     wireRow: Record<string, unknown> | null,
   ): Promise<void> => {
-    const uris = collectAllImageUris(catalog, wireRow);
-    return prefetchAllUris(uris);
+    await prefetchKioskSplash(wireRow);
+    const splash = kioskSplashImageUri(wireRow);
+    const uris = collectAllImageUris(catalog, wireRow).filter(u => u !== splash);
+    warmRemoteImageCache(uris);
+    await Promise.all(
+      uris.map(uri =>
+        prefetchProductImageOnce(uri).catch(() => {
+          /* best-effort */
+        }),
+      ),
+    );
+    if (__DEV__) {
+      console.log(`[MenuPreload] prefetched ${uris.length} menu images`);
+    }
   };
 }
 

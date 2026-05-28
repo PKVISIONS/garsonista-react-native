@@ -49,10 +49,11 @@ export async function legacyPostText(url: string, form: FormData): Promise<strin
       (typeof globalThis.performance?.now === 'function'
         ? globalThis.performance.now()
         : Date.now()) - t0;
-    if (selectHint === 'insert_orders') {
+    if (__DEV__ && selectHint === 'insert_orders') {
+      const bodyPreview = text.length > 300 ? `${text.slice(0, 300)}...` : text;
       console.log(
-        `[Garsonista HTTP] RESPONSE ${Math.round(ms)}ms select=${selectHint} host=${new URL(url).host} body=`,
-        text,
+        `[Garsonista HTTP] RESPONSE ${Math.round(ms)}ms select=${selectHint} host=${new URL(url).host} bodyPreview=`,
+        bodyPreview,
       );
     }
     if (!res.ok) {

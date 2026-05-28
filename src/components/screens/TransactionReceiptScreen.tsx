@@ -12,6 +12,7 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
   ActivityIndicator,
+  InteractionManager,
   Image,
   ImageBackground,
   Pressable,
@@ -212,9 +213,12 @@ export function TransactionReceiptScreen({navigation, route}: Props): React.JSX.
       }
     };
 
-    void run();
+    const interaction = InteractionManager.runAfterInteractions(() => {
+      void run();
+    });
     return () => {
       cancelled = true;
+      interaction.cancel();
     };
   }, [session, wireRow, cart, online, clearCart, paymentMethod]);
 

@@ -1,16 +1,22 @@
 import {CommonActions} from '@react-navigation/native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import React, {useMemo} from 'react';
-import {FlatList, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions} from 'react-native';
+import React, {useCallback, useMemo} from 'react';
+import {
+  Image,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {KIOSK_ORDER_TABLE_ID} from '@constants/service';
 import {ROUTES} from '@constants/routes';
 import type {RootStackParamList} from '@navigation/types';
-import type {Category, Product} from '@models';
-import {priceProductsForTable} from '@services/catalogService';
+import type {Category} from '@models';
 import {resolveDefaultTableId} from '@services/catalogService';
-import {useAuthStore, useCartStore, useCatalogStore} from '@store';
-import {theme, cardShadow, shadowFooterUp} from '@theme/kiosk';
+import {useAuthStore, useCartStore, useCatalogStore, useMenuPreloadStore} from '@store';
+import {theme} from '@theme/kiosk';
 import {pickCatalogText} from '@utils/catalogText';
 import {
   imagesBaseUrlFromWireRow,
@@ -18,24 +24,18 @@ import {
   productImageSource,
   remoteUriSource,
 } from '@utils/productImage';
+import {useMenuGridMetrics} from '@hooks/useMenuGridMetrics';
+import {CategoryProductGrid} from '../MenuProductGrid';
 import {StartOverConfirmModal} from '../StartOverConfirmModal';
-import {ProductGridImage, PRODUCT_IMAGE_ASPECT_RATIO} from '../ProductGridImage';
 import {localizationStore, translate} from '../../stores/Localization/LocalizationStore';
 
 const cartIconImg = require('../../assets/images/cart-icon.png');
 const kioskBrandLogoFallback = require('../../assets/images/garsonista-kiosk-logo.png');
 
-/** Horizontal padding on `productList` (left + right) — must match `styles.productList`. */
-const PRODUCT_LIST_H_PAD = 8 + 10;
-const MENU_GRID_GAP = 10;
 /** Footer “Start from the beginning” — max width (px). */
 const FOOTER_START_OVER_MAX_WIDTH = 400;
-/** Footer “View order” — max width (px); change independently of `FOOTER_START_OVER_MAX_WIDTH`. */
+/** Footer “View order” — max width (px). */
 const FOOTER_VIEW_ORDER_MAX_WIDTH = 540;
-
-function clamp(n: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, n));
-}
 
 type Props = NativeStackScreenProps<RootStackParamList, typeof ROUTES.Menu>;
 
@@ -44,10 +44,6 @@ export function MenuScreen({navigation, route}: Props): React.JSX.Element {
   const lang = localizationStore.currentLanguageCode;
   const wireRow = useAuthStore(s => s.wireRow);
   const imagesBaseUrl = useAuthStore(s => imagesBaseUrlFromWireRow(s.wireRow));
-  /**
-   * Brand mark: `user_logedin[0]`.`kiosk_image3` (Cordova `.logo_new_image`) — same as Order review.
-   * Not `kiosk_image1`/`2` (those are portrait/wide splashes for PlaceOrder).
-   */
   const brandLogoUri = useMemo(() => kioskLogoImageUri(wireRow), [wireRow]);
   const menuHeaderImageSource = brandLogoUri
     ? remoteUriSource(brandLogoUri)
@@ -57,9 +53,42 @@ export function MenuScreen({navigation, route}: Props): React.JSX.Element {
   const cart = useCartStore(s => s.cart);
   const resetForServiceType = useCartStore(s => s.resetForServiceType);
   const clear = useCartStore(s => s.clear);
+  const setServiceType = useMenuPreloadStore(s => s.setServiceType);
+  const setActiveCategoryId = useMenuPreloadStore(s => s.setActiveCategoryId);
+  const preloadTableIds = useMenuPreloadStore(s => s.tableIds);
+  const stagedCategoryIds = useMenuPreloadStore(s => s.stagedCategoryIds);
+  const productsByTableId = useMenuPreloadStore(s => s.productsByTableId);
+  const productImageUriById = useMenuPreloadStore(s => s.productImageUriById);
+
+  const categories = useMemo(() => {
+    const c = data?.categories ?? [];
+    return c.filter(x => x.parentId == null);
+  }, [data]);
+
+  const categoryById = useMemo(() => {
+    const map = new Map<number, Category>();
+    for (const category of categories) {
+      map.set(category.id, category);
+    }
+    return map;
+  }, [categories]);
+
+  const [catId, setCatId] = React.useState<number | null>(null);
+  const [startOverModalVisible, setStartOverModalVisible] = React.useState(false);
+
+  const activeCatId = catId ?? categories[0]?.id ?? null;
+  const tableId = preloadTableIds[serviceType];
+  const productsForTable = productsByTableId[tableId] ?? {};
+
+  const mountedCategoryIds =
+    stagedCategoryIds.length > 0
+      ? stagedCategoryIds
+      : categories.map(category => category.id);
 
   React.useEffect(() => {
-    const defaultTableId = resolveDefaultTableId(data?.storeTables ?? [], serviceType);
+    const defaultTableId =
+      preloadTableIds[serviceType] ||
+      resolveDefaultTableId(data?.storeTables ?? [], serviceType);
     if (
       !cart ||
       cart.tableId !== defaultTableId ||
@@ -67,38 +96,17 @@ export function MenuScreen({navigation, route}: Props): React.JSX.Element {
     ) {
       resetForServiceType(serviceType, defaultTableId);
     }
-  }, [cart, data, resetForServiceType, serviceType]);
+  }, [cart, data, preloadTableIds, resetForServiceType, serviceType]);
 
-  const categories = useMemo(() => {
-    const c = data?.categories ?? [];
-    return c.filter(x => x.parentId == null);
-  }, [data]);
+  React.useEffect(() => {
+    setServiceType(serviceType);
+  }, [serviceType, setServiceType]);
 
-  const [catId, setCatId] = React.useState<number | null>(null);
-  const [startOverModalVisible, setStartOverModalVisible] = React.useState(false);
-
-  const activeCatId = catId ?? categories[0]?.id ?? null;
-
-  const sectionTitle = useMemo(() => {
-    const activeCategory = categories.find(c => c.id === activeCatId);
-    if (!activeCategory) {
-      return translate('kiosk.menu.defaultCategory');
+  React.useEffect(() => {
+    if (activeCatId != null) {
+      setActiveCategoryId(activeCatId);
     }
-    return pickCatalogText(lang, activeCategory.name, activeCategory.nameEn);
-  }, [activeCatId, categories, lang]);
-
-  const products: Product[] = useMemo(() => {
-    const all = data?.products ?? [];
-    const rows = data?.productPrices ?? [];
-    const priced =
-      rows.length > 0
-        ? priceProductsForTable(all, rows, cart?.tableId ?? KIOSK_ORDER_TABLE_ID)
-        : all;
-    if (activeCatId == null) {
-      return priced;
-    }
-    return priced.filter(p => p.categoryId === activeCatId);
-  }, [data, activeCatId, cart?.tableId]);
+  }, [activeCatId, setActiveCategoryId]);
 
   const total = useMemo(() => {
     if (!cart) {
@@ -108,32 +116,14 @@ export function MenuScreen({navigation, route}: Props): React.JSX.Element {
   }, [cart]);
 
   const cartCount = cart?.items.reduce((s, i) => s + i.quantity, 0) ?? 0;
-  const {width: screenWidth, height: windowHeight} = useWindowDimensions();
+  const {screenWidth, leftRailWidth, cardWidth} = useMenuGridMetrics();
 
-  /** Wider than old fixed 130; scales with screen, clamped so grid + rail stay usable. */
-  const leftRailWidth = useMemo(
-    () => Math.round(clamp(screenWidth * 0.195, 142, 240)),
-    [screenWidth],
+  const onPressProduct = useCallback(
+    (productId: number) => {
+      navigation.navigate(ROUTES.ProductDetail, {productId});
+    },
+    [navigation],
   );
-
-  const cardWidth = useMemo(() => {
-    const gridInner =
-      screenWidth - leftRailWidth - PRODUCT_LIST_H_PAD;
-    return Math.max(
-      0,
-      Math.floor((gridInner - 2 * MENU_GRID_GAP) / 3),
-    );
-  }, [screenWidth, leftRailWidth]);
-  /** Sidebar white card: hug content; cap height so long lists scroll */
-  const sideRailMaxHeight = Math.round(windowHeight * 0.78);
-
-  React.useEffect(() => {
-    // #region agent log
-    const p0 = products[0];
-    const src0 = p0 ? productImageSource(p0.imageUrl, imagesBaseUrl) : null;
-    fetch('http://127.0.0.1:7806/ingest/a1837756-80df-4bbf-b9af-46808b0f37e2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'616b00'},body:JSON.stringify({sessionId:'616b00',hypothesisId:'H4',location:'MenuScreen.tsx:useEffect',message:'menu layout + sample product',data:{screenWidth,cardWidth,leftRailWidth,productsN:products.length,brandRemote:!!brandLogoUri,img0:src0?.uri?.slice?.(0,140)??null},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-  }, [screenWidth, cardWidth, leftRailWidth, products, imagesBaseUrl, brandLogoUri]);
 
   const onConfirmStartOver = () => {
     setStartOverModalVisible(false);
@@ -145,6 +135,14 @@ export function MenuScreen({navigation, route}: Props): React.JSX.Element {
       }),
     );
   };
+
+  const onSelectCategory = useCallback(
+    (id: number) => {
+      setCatId(id);
+      setActiveCategoryId(id);
+    },
+    [setActiveCategoryId],
+  );
 
   const renderCategoryRow = (
     selected: boolean,
@@ -191,20 +189,18 @@ export function MenuScreen({navigation, route}: Props): React.JSX.Element {
       </View>
       <View style={styles.body}>
         <View style={[styles.leftBar, {width: leftRailWidth}]}>
-          <View
-            style={[styles.leftBarInner, {maxHeight: sideRailMaxHeight}]}>
+          <View style={styles.leftBarInner}>
             <ScrollView
-              style={{maxHeight: sideRailMaxHeight}}
+              style={styles.leftBarScroll}
               contentContainerStyle={styles.leftBarContent}
               showsVerticalScrollIndicator={false}
               bounces={false}>
               {categories.map((item: Category) => (
                 <React.Fragment key={item.id}>
-                  {/* item.name is server-provided — not localizable via translate() */}
                   {renderCategoryRow(
                     activeCatId === item.id,
                     pickCatalogText(lang, item.name, item.nameEn),
-                    () => setCatId(item.id),
+                    () => onSelectCategory(item.id),
                     item.imageUrl,
                   )}
                 </React.Fragment>
@@ -212,94 +208,60 @@ export function MenuScreen({navigation, route}: Props): React.JSX.Element {
             </ScrollView>
           </View>
         </View>
-        <FlatList
-          style={styles.productList}
-          data={products}
-          keyExtractor={p => String(p.id)}
-          numColumns={3}
-          columnWrapperStyle={styles.row3Wrap}
-          contentContainerStyle={styles.productListContent}
-          ListHeaderComponent={
-            <Text style={styles.sectionTitle}>{sectionTitle}</Text>
-          }
-          ListEmptyComponent={
-            <Text style={styles.emptyList}>{translate('kiosk.menu.emptyProducts')}</Text>
-          }
-          showsVerticalScrollIndicator={false}
-          renderItem={({item}) => {
-            const src = productImageSource(item.imageUrl, imagesBaseUrl);
-            return (
-              <TouchableOpacity
-                activeOpacity={0.92}
-                style={[styles.card, {width: cardWidth}]}
-                onPress={() =>
-                  navigation.navigate(ROUTES.ProductDetail, {productId: item.id})
-                }>
-                <View style={styles.cardImageWrap}>
-                  {src ? (
-                    <ProductGridImage
-                      key={item.id}
-                      uri={src.uri}
-                      width={cardWidth}
-                    />
-                  ) : (
-                    <View
-                      style={[
-                        styles.cardImagePlaceholder,
-                        {
-                          height: cardWidth / PRODUCT_IMAGE_ASPECT_RATIO,
-                        },
-                      ]}
-                    />
-                  )}
-                </View>
-                <View style={styles.cardBody}>
-                  {/* item.name is server-provided — not localizable via translate() */}
-                  <Text style={styles.cardTitle} numberOfLines={3}>
-                    {pickCatalogText(lang, item.name, item.nameEn)}
-                  </Text>
-                  <View style={styles.pricePill}>
-                    <Text style={styles.pricePillText}>
-                      {item.basePrice.toFixed(2).replace('.', ',')}€
-                    </Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            );
-          }}
-        />
+        <View style={styles.productListsHost}>
+          {mountedCategoryIds.map(categoryId => (
+            <CategoryProductGrid
+              key={`cat-list-${String(categoryId)}`}
+              categoryId={categoryId}
+              category={categoryById.get(categoryId)}
+              products={productsForTable[categoryId] ?? []}
+              isActive={categoryId === activeCatId}
+              lang={lang}
+              cardWidth={cardWidth}
+              productImageUriById={productImageUriById}
+              fallbackTitle={translate('kiosk.menu.defaultCategory')}
+              onPressProduct={onPressProduct}
+            />
+          ))}
+        </View>
       </View>
-        <View style={styles.footerTotalRow}>
-          <View style={styles.cartWrap}>
-            <Image source={cartIconImg} style={styles.footerCartIcon} />
-            {cartCount > 0 ? (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>
-                  {cartCount > 99 ? '99+' : String(cartCount)}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-          <Text style={styles.total}>
-            {total.toFixed(2).replace('.', ',')}€
+      <View style={styles.footerTotalRow}>
+        <View style={styles.cartWrap}>
+          <Image source={cartIconImg} style={styles.footerCartIcon} />
+          {cartCount > 0 ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>
+                {cartCount > 99 ? '99+' : String(cartCount)}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+        <Text style={styles.total}>
+          {total.toFixed(2).replace('.', ',')}€
+        </Text>
+      </View>
+      <View
+        style={[
+          styles.footerBtnRow,
+          {paddingHorizontal: Math.round(screenWidth * 0.04)},
+        ]}>
+        <TouchableOpacity
+          activeOpacity={0.88}
+          style={[styles.footerBtn, styles.footerBtnOutline]}
+          onPress={() => setStartOverModalVisible(true)}>
+          <Text style={styles.footerBtnTextOutline}>
+            {translate('kiosk.menu.startOver')}
           </Text>
-        </View>
-        <View style={[styles.footerBtnRow, {paddingHorizontal: Math.round(screenWidth * 0.04)}]}>
-          <TouchableOpacity
-            activeOpacity={0.88}
-            style={[styles.footerBtn, styles.footerBtnOutline]}
-            onPress={() => setStartOverModalVisible(true)}>
-            <Text style={styles.footerBtnTextOutline}>
-              {translate('kiosk.menu.startOver')}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            activeOpacity={0.88}
-            style={[styles.footerBtn, styles.footerBtnSolid]}
-            onPress={() => navigation.navigate(ROUTES.OrderReview)}>
-            <Text style={styles.footerBtnTextSolid}>{translate('kiosk.menu.viewOrder')}</Text>
-          </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
+        <TouchableOpacity
+          activeOpacity={0.88}
+          style={[styles.footerBtn, styles.footerBtnSolid]}
+          onPress={() => navigation.navigate(ROUTES.OrderReview)}>
+          <Text style={styles.footerBtnTextSolid}>
+            {translate('kiosk.menu.viewOrder')}
+          </Text>
+        </TouchableOpacity>
+      </View>
       <StartOverConfirmModal
         visible={startOverModalVisible}
         onClose={() => setStartOverModalVisible(false)}
@@ -314,7 +276,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.color.bgSecondary,
   },
-  /** `images_url` + `kiosk_image3` (Cordova logo) — not kiosk_image1/2 splashes */
   menuTopBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -335,22 +296,25 @@ const styles = StyleSheet.create({
   body: {
     flex: 1,
     flexDirection: 'row',
+    alignItems: 'stretch',
+    overflow: 'hidden',
   },
-  /** `.kiosk-cat-column` — width from `leftRailWidth` (responsive) */
   leftBar: {
     flexShrink: 0,
+    flexGrow: 0,
+    alignSelf: 'stretch',
     padding: 10,
     backgroundColor: theme.color.bgSecondary,
-    justifyContent: 'flex-start',
-    alignItems: 'stretch',
   },
-  /** White panel wraps category list; no forced full-column stretch */
   leftBarInner: {
-    alignSelf: 'flex-start',
+    flex: 1,
     width: '100%',
     backgroundColor: theme.color.bgPrimary,
     borderRadius: theme.radius.large,
     overflow: 'hidden',
+  },
+  leftBarScroll: {
+    flex: 1,
   },
   leftBarContent: {
     paddingHorizontal: 8,
@@ -362,6 +326,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 4,
     paddingVertical: 8,
+    minHeight: 96,
     borderBottomWidth: 3,
     borderBottomColor: 'transparent',
     width: '100%',
@@ -369,7 +334,6 @@ const styles = StyleSheet.create({
   sideItemActive: {
     borderBottomColor: theme.color.accentPrimary,
   },
-  /** No `tintColor` on remote photos; no border (user request). */
   sideIcon: {
     width: 90,
     height: 51,
@@ -394,102 +358,13 @@ const styles = StyleSheet.create({
   sideTextActive: {
     color: theme.color.accentPrimary,
   },
-  /** `.kiosk-prod-column-container` */
-  productList: {
+  productListsHost: {
     flex: 1,
-    paddingLeft: 8,
-    paddingRight: 10,
-    paddingTop: 0,
-  },
-  productListContent: {
-    paddingTop: 15,
-    paddingBottom: 12,
-  },
-  /** `.kiosk-cat-title` */
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: theme.color.textPrimary,
-    marginBottom: 14,
-    marginTop: 0,
-  },
-  emptyList: {
-    color: theme.color.textSecondary,
-    paddingVertical: theme.space.xl,
-    textAlign: 'center',
-  },
-  row3Wrap: {
-    marginBottom: 12,
-    paddingHorizontal: 0,
-    gap: MENU_GRID_GAP,
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-  },
-  /** Product tile — fixed 16:9 image area so every card is the same height */
-  card: {
-    backgroundColor: theme.color.bgPrimary,
-    borderRadius: theme.radius.card,
-    borderWidth: 1,
-    borderColor: theme.color.border,
+    minWidth: 0,
+    position: 'relative',
     overflow: 'hidden',
-    ...cardShadow,
-  },
-  /** Top corners only — bottom radius on the image strip clipped tall photos; bottom edge stays square to body */
-  cardImageWrap: {
-    width: '100%',
-    alignSelf: 'stretch',
-    backgroundColor: theme.color.bgPrimary,
-    borderTopLeftRadius: theme.radius.card,
-    borderTopRightRadius: theme.radius.card,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-    overflow: 'hidden',
-  },
-  cardImagePlaceholder: {
-    width: '100%',
-    backgroundColor: theme.color.bgMuted,
-  },
-  cardBody: {
-    paddingHorizontal: 0,
-    paddingVertical: 6,
-    alignItems: 'center',
-    gap: 6,
-    minHeight: 88,
-    justifyContent: 'center',
-    backgroundColor: theme.color.bgPrimary,
-  },
-  /** Product name — simple black, like reference combos */
-  cardTitle: {
-    fontWeight: '600',
-    fontSize: 13,
-    lineHeight: 17,
-    color: theme.color.textPrimary,
-    textAlign: 'center',
-    letterSpacing: 0,
-    paddingHorizontal: 10,
-  },
-  /** Grey band ~80% of card width (10% inset each side) */
-  pricePill: {
-    width: '90%',
-    backgroundColor: theme.color.menuComboPricePillBg,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 20,
-    alignSelf: 'center',
-    alignItems: 'center',
-  },
-  pricePillText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: theme.color.pricePillText,
-  },
-  footer: {
     backgroundColor: theme.color.bgSecondary,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: theme.color.border,
-    ...shadowFooterUp,
   },
-  /** Cart + total: centered, nudged a few px left (see `translateX`) */
   footerTotalRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -499,6 +374,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 8,
     transform: [{translateX: -170}],
+    backgroundColor: theme.color.bgSecondary,
   },
   cartWrap: {
     position: 'relative',
@@ -535,8 +411,8 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingBottom: 16,
     paddingTop: 2,
+    backgroundColor: theme.color.bgSecondary,
   },
-  /** Shared padding + shape; `maxWidth` is per-button below */
   footerBtn: {
     minWidth: 0,
     paddingVertical: 14,
@@ -545,7 +421,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  /** Start over — cap width independent of “View order” */
   footerBtnOutline: {
     flex: 1,
     maxWidth: FOOTER_START_OVER_MAX_WIDTH,
@@ -559,7 +434,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: 'center',
   },
-  /** View order — own `maxWidth` + flex so size is tunable apart from “Start over” */
   footerBtnSolid: {
     flex: 1.55,
     maxWidth: FOOTER_VIEW_ORDER_MAX_WIDTH,

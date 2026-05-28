@@ -1,6 +1,7 @@
 import {
   NavigationContainer,
   useNavigation,
+  useNavigationContainerRef,
   type Theme,
 } from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
@@ -9,7 +10,7 @@ import {observer} from 'mobx-react-lite';
 import React, {useEffect} from 'react';
 import {ActivityIndicator, Linking, StyleSheet, View} from 'react-native';
 import {ROUTES} from '@constants/routes';
-import {useAuthStore, usePaymentStore} from '@store';
+import {useAuthStore, useMenuPreloadStore, usePaymentStore} from '@store';
 import {localizationStore, translate} from '../stores/Localization/LocalizationStore';
 import {parseVivaCallbackUrl} from '@services/payment/vivaCallbackParser';
 import {revertSaleKiosk} from '@services/paymentService';
@@ -131,10 +132,21 @@ function DeepLinkBridge(): React.JSX.Element {
 }
 
 export const AppNavigator = observer(function AppNavigator(): React.JSX.Element {
+  const navigationRef = useNavigationContainerRef<RootStackParamList>();
   const booting = useAuthStore(s => s.booting);
   const session = useAuthStore(s => s.session);
   const restore = useAuthStore(s => s.restore);
+  const menuReady = useMenuPreloadStore(s => s.ready);
+  const menuBootstrapPending = useMenuPreloadStore(s => s.menuBootstrapPending);
+  const prerenderComplete = useMenuPreloadStore(s => s.prerenderComplete);
   const language = localizationStore.currentLanguageCode;
+
+  const waitingForMenuPrerender =
+    Boolean(session) &&
+    menuReady &&
+    menuBootstrapPending &&
+    !prerenderComplete;
+  const showBootOverlay = booting || waitingForMenuPrerender;
 
   useEffect(() => {
     void restore();
@@ -143,18 +155,17 @@ export const AppNavigator = observer(function AppNavigator(): React.JSX.Element 
   useSubscriptionQuery(Boolean(session));
   useOfflineDrain(Boolean(session));
 
-  if (booting) {
-    return (
-      <View style={styles.bootLoader}>
-        <ActivityIndicator size="large" color={theme.color.accentPrimary} />
-      </View>
-    );
-  }
-
   const stackTheme: Theme = navigationTheme;
 
   return (
-    <NavigationContainer linking={linking} theme={stackTheme}>
+    <View style={styles.appRoot}>
+      {showBootOverlay ? (
+        <View style={styles.bootOverlay}>
+          <ActivityIndicator size="large" color={theme.color.accentPrimary} />
+        </View>
+      ) : null}
+      {!showBootOverlay ? (
+        <NavigationContainer ref={navigationRef} linking={linking} theme={stackTheme}>
       <Stack.Navigator
         key={`${session ? 'app' : 'auth'}-${language}`}
         initialRouteName={
@@ -184,7 +195,7 @@ export const AppNavigator = observer(function AppNavigator(): React.JSX.Element 
             <Stack.Screen
               name={ROUTES.Menu}
               component={MenuScreen}
-              options={{headerShown: false}}
+              options={{headerShown: false, animation: 'none', freezeOnBlur: true}}
             />
             <Stack.Screen
               name={ROUTES.ProductDetail}
@@ -259,13 +270,19 @@ export const AppNavigator = observer(function AppNavigator(): React.JSX.Element 
         )}
       </Stack.Navigator>
       {session ? <DeepLinkBridge /> : null}
-    </NavigationContainer>
+        </NavigationContainer>
+      ) : null}
+    </View>
   );
 });
 
 const styles = StyleSheet.create({
-  bootLoader: {
+  appRoot: {
     flex: 1,
+  },
+  bootOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 100,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: theme.color.bgPrimary,
