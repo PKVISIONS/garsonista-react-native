@@ -54,7 +54,13 @@ function shouldTryAlternateLoginHost(err: unknown): boolean {
     return true;
   }
   const status = (err as Error & {status?: number}).status;
-  return typeof status === 'number' && (status === 502 || status === 503 || status === 504);
+  if (typeof status !== 'number') {
+    return false;
+  }
+  if (status === 401 || status === 403) {
+    return false;
+  }
+  return status >= 400;
 }
 
 /**
@@ -71,12 +77,24 @@ export async function login(email: string, password: string): Promise<LoginResul
   try {
     text = await postLogin(primaryAuth, form);
   } catch (first) {
+    if (__DEV__) {
+      const firstErr = first as Error & {status?: number};
+      console.warn(
+        `[Garsonista HTTP] login primary failed host=${new URL(primaryAuth).host} status=${firstErr.status ?? 'n/a'} msg=${firstErr.message ?? 'unknown'}`,
+      );
+    }
     if (!shouldTryAlternateLoginHost(first)) {
       throw first;
     }
     try {
       text = await postLogin(altAuth, buildLoginForm(email, password));
-    } catch {
+    } catch (second) {
+      if (__DEV__) {
+        const secondErr = second as Error & {status?: number};
+        console.warn(
+          `[Garsonista HTTP] login alternate failed host=${new URL(altAuth).host} status=${secondErr.status ?? 'n/a'} msg=${secondErr.message ?? 'unknown'}`,
+        );
+      }
       throw first;
     }
   }

@@ -40,6 +40,9 @@ export function buildWireOrdersFromCart(
   const cardAmount = paymentMethod === 'card' || paymentMethod === 'iris' ? totalAmount : 0;
   const bankAmount = paymentMethod === 'bank' ? totalAmount : 0;
   const POSclientUNID = createPosClientUnid();
+  const autoReceiptForPayment = paymentMethod === 'card' ? 0 : ctx.auto_receipt;
+  const hasTidNsp = String(ctx.tid_nsp ?? '').trim() !== '';
+  const cardSignatureMode = paymentMethod === 'card' && hasTidNsp;
   let idx = 0;
   return cart.items.map(item => {
     idx += 1;
@@ -66,14 +69,19 @@ export function buildWireOrdersFromCart(
       isupd: 0,
       isiris: paymentMethod === 'iris' ? 1 : 0,
       iscredit: paymentMethod === 'card' ? 1 : 0,
-      isprepaid: item.quantity,
-      auto_receipt: ctx.auto_receipt,
+      isprepaid: cardSignatureMode ? 0 : item.quantity,
+      auto_receipt: autoReceiptForPayment,
       ispaid: 0,
       isgift: 0,
       iscancelled: 0,
       iscompleted: 0,
       precash_val: cashAmount > 0 ? Number(((cashAmount / Math.max(totalAmount, 1)) * item.lineTotal).toFixed(2)) : 0,
-      precard_val: cardAmount > 0 ? Number(((cardAmount / Math.max(totalAmount, 1)) * item.lineTotal).toFixed(2)) : 0,
+      precard_val:
+        cardSignatureMode
+          ? 0
+          : cardAmount > 0
+            ? Number(((cardAmount / Math.max(totalAmount, 1)) * item.lineTotal).toFixed(2))
+            : 0,
       prebank_val: bankAmount > 0 ? Number(((bankAmount / Math.max(totalAmount, 1)) * item.lineTotal).toFixed(2)) : 0,
       precash_val_tot: cashAmount,
       precard_val_tot: cardAmount,
@@ -82,7 +90,7 @@ export function buildWireOrdersFromCart(
       clientUNID,
       POSclientUNID,
       byME: 1,
-      auto_receipt_switch: ctx.auto_receipt,
+      auto_receipt_switch: autoReceiptForPayment,
       loginid: ctx.userId,
       user_login_descr: ctx.userToken,
       user_login: ctx.userLogin,

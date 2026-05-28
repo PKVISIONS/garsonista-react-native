@@ -13,8 +13,12 @@ export function parseVivaCallbackUrl(url: string): VivaCallbackFields {
     : `?${normalized}`;
   const params = new URLSearchParams(q.startsWith('?') ? q : `?${q}`);
   const get = (k: string) => params.get(k);
+  const rawStatus = (get('status') ?? '').toLowerCase();
+  const normalizedStatus =
+    rawStatus === 'ok' ? 'success' : rawStatus === 'fail' ? 'failed' : rawStatus;
+
   return {
-    status: get('status'),
+    status: normalizedStatus || null,
     message: get('message'),
     action: get('action'),
     clientTransactionId: get('clientTransactionId'),
@@ -34,10 +38,11 @@ export function vivaFieldsToTransaction(
   fields: VivaCallbackFields,
 ): VivaTransaction {
   const amountCents = Number(fields.amount ?? 0);
+  const normalized = (fields.status ?? '').toLowerCase();
   const status =
-    fields.status === 'success'
+    normalized === 'success' || normalized === 'ok'
       ? 'success'
-      : fields.status === 'failed'
+      : normalized === 'failed' || normalized === 'fail'
         ? 'failed'
         : 'pending';
   return mapVivaTransaction({

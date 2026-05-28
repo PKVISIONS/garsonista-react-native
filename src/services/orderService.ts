@@ -21,14 +21,24 @@ export async function submitCartOnline(
   const wire = buildWireOrdersFromCart(cart, ctx, options);
   const paymentMethod = options?.paymentMethod ?? 'cash';
   const totalAmount = cart.items.reduce((sum, item) => sum + item.lineTotal, 0);
-  const prebankVal =
-    paymentMethod === 'bank' ? totalAmount : paymentMethod === 'card' || paymentMethod === 'iris' ? totalAmount : 0;
+  const prebankVal = paymentMethod === 'bank' ? totalAmount : 0;
   const isIris = paymentMethod === 'iris' ? 1 : 0;
   const isCredit = paymentMethod === 'card' ? 1 : 0;
+  const hasTidNsp = String((ctx as Record<string, unknown>).tid_nsp ?? '').trim() !== '';
+  const action =
+    isCredit === 1 && totalAmount > 0 && hasTidNsp
+      ? 'signature'
+      : 'receipt';
+  const isCashOnly = paymentMethod === 'cash';
+  const novusUser = isCashOnly
+    ? 0
+    : Number(ctx.auto_receipt) === 1 && Number(ctx.novus_user) === 1
+      ? 1
+      : 0;
   const form = new FormData();
   form.append('ajax', 'true');
   form.append('select', 'insert_orders');
-  form.append('action', 'receipt');
+  form.append('action', action);
   form.append('app_src', 'kiosk');
   form.append('norders', JSON.stringify(wire));
   form.append('prebank_val', String(prebankVal));
@@ -36,7 +46,7 @@ export async function submitCartOnline(
   form.append('iscredit', String(isCredit));
   form.append('semiL', String(ctx.semiLocal));
   form.append('user_id', String(ctx.userId));
-  form.append('novus_user', paymentMethod === 'cash' ? '0' : '1');
+  form.append('novus_user', String(novusUser));
   form.append('notaxdocs_tolocal_printer', '0');
   form.append('idstore_pos', String(Number((ctx as Record<string, unknown>).idstore_pos ?? 0)));
   form.append('aade_branchcode', String(Number((ctx as Record<string, unknown>).aade_branchcode ?? 0)));
@@ -48,6 +58,47 @@ export async function submitCartOnline(
   form.append('tipAmount', String(options?.tipAmount ?? 0));
   form.append('user', String(ctx.userLogin));
   form.append('p', String(ctx.password));
+  if (__DEV__) {
+    const first = wire[0] as Record<string, unknown> | undefined;
+    console.log(
+      `[VivaFlow] insert_orders req paymentMethod=${paymentMethod} action=${action} prebank_val=${prebankVal.toFixed(
+        2,
+      )} iscredit=${isCredit} hasTidNsp=${hasTidNsp} novus_user=${novusUser} auto_receipt=${ctx.auto_receipt} ctx.novus_user=${ctx.novus_user}`,
+    );
+    if (first) {
+      console.log(
+        '[VivaFlow] insert_orders first norder snapshot=',
+        JSON.stringify(
+          {
+            tableid: first.tableid,
+            productid: first.productid,
+            aqty: first.aqty,
+            val: first.val,
+            aval: first.aval,
+            isiris: first.isiris,
+            iscredit: first.iscredit,
+            isprepaid: first.isprepaid,
+            auto_receipt: first.auto_receipt,
+            auto_receipt_switch: first.auto_receipt_switch,
+            ispaid: first.ispaid,
+            precash_val: first.precash_val,
+            precard_val: first.precard_val,
+            prebank_val: first.prebank_val,
+            precash_val_tot: first.precash_val_tot,
+            precard_val_tot: first.precard_val_tot,
+            prebank_val_tot: first.prebank_val_tot,
+            tips: first.tips,
+            POSclientUNID: first.POSclientUNID,
+            byME: first.byME,
+            novus_user: first.novus_user,
+            user_login: first.user_login,
+          },
+          null,
+          0,
+        ),
+      );
+    }
+  }
   const baseUrl =
     ctx.localIp !== '' && ctx.semiLocal === 0
       ? ctx.localIp

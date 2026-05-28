@@ -16,25 +16,59 @@ export function PaymentCardScreen({route}: Props): React.JSX.Element {
   const launchedRef = useRef(false);
 
   const launch = async () => {
+    if (__DEV__) {
+      console.log(
+        `[VivaFlow] PaymentCard launch start amount=${amountEuros.toFixed(2)} txId=${clientTransactionId} hasFiscal=${Boolean(
+          fiscalisationData?.trim(),
+        )} fiscalLen=${fiscalisationData?.length ?? 0}`,
+      );
+    }
     setError(null);
     setPhase('initiating');
+    if (!fiscalisationData || !fiscalisationData.trim()) {
+      if (__DEV__) {
+        console.log('[VivaFlow] PaymentCard launching without fiscalisationData');
+      }
+    }
     const uri = buildVivaPaymentUri({
       clientTransactionId,
       amountEuros,
+      fiscalisationData,
     });
     try {
+      if (__DEV__) {
+        console.log('[VivaFlow] PaymentCard deeplink built');
+      }
       console.log('[Viva] Launch URI:', uri);
       const can = await Linking.canOpenURL(uri);
       console.log('[Viva] canOpenURL:', can);
+      if (__DEV__) {
+        console.log(`[VivaFlow] Linking.canOpenURL=${String(can)}`);
+      }
       setPhase('awaiting_app');
       await Linking.openURL(uri);
+      if (__DEV__) {
+        console.log('[VivaFlow] Linking.openURL resolved');
+      }
     } catch (e) {
+      if (__DEV__) {
+        console.log(
+          `[VivaFlow] PaymentCard launch error name=${(e as Error)?.name ?? 'unknown'} message=${(e as Error)?.message ?? String(e)}`,
+        );
+      }
       setPhase('failed');
       setError(String(e));
     }
   };
 
   useEffect(() => {
+    if (__DEV__) {
+      console.log(
+        `[VivaFlow] PaymentCard mounted amount=${amountEuros.toFixed(2)} txId=${clientTransactionId} hasFiscal=${Boolean(
+          fiscalisationData?.trim(),
+        )}`,
+      );
+    }
     if (launchedRef.current) {
       return;
     }

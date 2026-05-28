@@ -7,6 +7,7 @@ export const STORAGE_KEYS = {
   authPersist: 'garsonista.auth.persist',
   featureFlags: 'garsonista.featureFlags',
   offlineOrderQueue: 'garsonista.orders.offlineQueue',
+  vivaIncludeIsv: 'garsonista.viva.includeIsv',
   /** Local-only ticket counter shown on the thank-you screen */
   ticketCounter: 'garsonista.tickets.counter',
 } as const;

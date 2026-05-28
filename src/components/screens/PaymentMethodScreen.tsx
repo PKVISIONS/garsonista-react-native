@@ -21,7 +21,6 @@ import type {RootStackParamList} from '@navigation/types';
 import {useAuthStore, useCartStore} from '@store';
 import {kioskTopBrandLogo, shadowChoiceCard, theme} from '@theme/kiosk';
 import {kioskLogoImageUri, remoteUriSource} from '@utils/productImage';
-import {createPosClientUnid} from '@utils/posClientUnid';
 import {translate} from '../../stores/Localization/LocalizationStore';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PaymentMethod'>;
@@ -68,6 +67,17 @@ export function PaymentMethodScreen({navigation}: Props): React.JSX.Element {
     }
   };
 
+  const openCardFlow = () => {
+    if (__DEV__) {
+      console.log(
+        `[VivaFlow] PaymentMethod -> TransactionReceipt(card) total=${total.toFixed(2)}`,
+      );
+    }
+    navigation.navigate(ROUTES.TransactionReceipt, {
+      paymentMethod: 'card',
+    });
+  };
+
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <View style={styles.topBrand}>
@@ -109,12 +119,7 @@ export function PaymentMethodScreen({navigation}: Props): React.JSX.Element {
                 pressed && styles.choicePressed,
               ]}
               android_ripple={{color: 'rgba(0,0,0,0.06)'}}
-              onPress={() =>
-                navigation.navigate(ROUTES.PaymentCard, {
-                  amountEuros: total,
-                  clientTransactionId: createPosClientUnid(),
-                })
-              }>
+              onPress={openCardFlow}>
               <KioskPaymentIcon variant="card" />
               <Text style={styles.choiceText}>{translate('kiosk.pay.card')}</Text>
             </Pressable>

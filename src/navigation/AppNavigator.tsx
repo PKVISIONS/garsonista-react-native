@@ -12,6 +12,7 @@ import {ROUTES} from '@constants/routes';
 import {useAuthStore, usePaymentStore} from '@store';
 import {localizationStore, translate} from '../stores/Localization/LocalizationStore';
 import {parseVivaCallbackUrl} from '@services/payment/vivaCallbackParser';
+import {revertSaleKiosk} from '@services/paymentService';
 import {useSubscriptionQuery} from '@hooks/useSubscriptionQuery';
 import {useOfflineDrain} from '@hooks/useOfflineDrain';
 import {LoginScreen} from '@screens/LoginScreen';
@@ -43,28 +44,83 @@ function DeepLinkBridge(): React.JSX.Element {
 
   useEffect(() => {
     const handleUrl = (url: string) => {
+      if (__DEV__) {
+        console.log(`[VivaFlow] Callback URL received: ${url}`);
+      }
       setDeepLink(url);
       const fields = parseVivaCallbackUrl(url);
+      if (__DEV__) {
+        console.log(
+          `[VivaFlow] Callback parsed status=${fields.status ?? 'null'} action=${fields.action ?? 'null'} txId=${fields.transactionId ?? 'null'} clientTxId=${fields.clientTransactionId ?? 'null'} eventId=${fields.transactionEventId ?? 'null'} amount=${fields.amount ?? 'null'} aadeTxId=${fields.aadeTransactionId ?? 'null'} message=${fields.message ?? 'null'}`,
+        );
+      }
       if (fields.status === 'success') {
+        if (__DEV__) {
+          console.log(
+            '[VivaFlow] Callback decision: success -> navigate TransactionReceipt(card)',
+          );
+        }
         setPhase('success');
         navigation.navigate(ROUTES.TransactionReceipt, {
           paymentMethod: 'card',
         });
       } else if (fields.status === 'failed') {
+        if (__DEV__) {
+          console.log('[VivaFlow] Callback decision: failed -> navigate CardFailed');
+        }
+        const clientTxId = String(fields.clientTransactionId ?? '');
+        if (clientTxId.startsWith('AUTX') && clientTxId.length > 4) {
+          const idtaxdocument = clientTxId.slice(4);
+          if (__DEV__) {
+            console.log(
+              `[VivaFlow] Callback failed AUTX -> revert_sale_kiosk_ajax idtaxdocument=${idtaxdocument}`,
+            );
+          }
+          void revertSaleKiosk(idtaxdocument)
+            .then(res => {
+              if (__DEV__) {
+                console.log(
+                  `[VivaFlow] revert_sale_kiosk_ajax response=${String(res).slice(0, 200)}`,
+                );
+              }
+            })
+            .catch(e => {
+              if (__DEV__) {
+                console.log(
+                  `[VivaFlow] revert_sale_kiosk_ajax failed msg=${(e as Error)?.message ?? String(
+                    e,
+                  )}`,
+                );
+              }
+            });
+        }
         setPhase('failed');
         navigation.navigate(ROUTES.CardFailed);
       } else if (fields.status) {
+        if (__DEV__) {
+          console.log('[VivaFlow] Callback decision: non-terminal status -> processing');
+        }
         setPhase('processing');
+      } else if (__DEV__) {
+        console.log('[VivaFlow] Callback decision: missing status');
       }
     };
 
     const sub = Linking.addEventListener('url', ({url}) => {
+      if (__DEV__) {
+        console.log('[VivaFlow] Linking event url fired');
+      }
       handleUrl(url);
     });
 
     void Linking.getInitialURL().then(url => {
       if (url) {
+        if (__DEV__) {
+          console.log('[VivaFlow] getInitialURL returned callback URL');
+        }
         handleUrl(url);
+      } else if (__DEV__) {
+        console.log('[VivaFlow] getInitialURL returned empty');
       }
     });
 

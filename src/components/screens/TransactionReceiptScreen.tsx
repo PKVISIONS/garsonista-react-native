@@ -42,6 +42,7 @@ const receiptBg = require('../../assets/images/kiosk-order-receipt-bg.png');
 const garsonistaPoweredByLogo = require('../../assets/images/garsonista-kiosk-logo.png');
 
 const RESET_AFTER_MS = 7000;
+const PRINT_TIMEOUT_MS = 8000;
 const tableLabelFor = (type: 'dine-in' | 'takeaway', tableId: number) =>
   type === 'dine-in' ? `Τραπέζι ${tableId}` : 'Takeaway';
 
@@ -85,15 +86,48 @@ export function TransactionReceiptScreen({navigation, route}: Props): React.JSX.
       const ctx = buildWireContext(session, wireRow, cart.tableId);
       try {
         let fiscalisationData: string | undefined;
+        let aadePayload:
+          | {
+              id: string;
+              digest: string;
+              signature: string;
+            }
+          | undefined;
         if (online) {
           const submitted = await submitCartOnline(cart, ctx, {
             paymentMethod,
             orderNumber: ticket,
             tipAmount: 0,
           });
-          fiscalisationData = resolveFiscalisationDataFromInvoiceUrl(
-            submitted.fiscalDoc?.invoiceUrl,
-          );
+          const invoiceRaw = submitted.fiscalDoc?.invoiceUrl;
+          fiscalisationData = resolveFiscalisationDataFromInvoiceUrl(invoiceRaw);
+          if (invoiceRaw && !fiscalisationData) {
+            try {
+              const parsed = JSON.parse(invoiceRaw) as Record<string, unknown>;
+              const digest = String(parsed.digest ?? '').trim();
+              const signature = String(parsed.signature ?? '').trim();
+              const id = String(parsed.id ?? '').trim();
+              const hasError = Boolean(parsed.error);
+              if (!hasError && digest && signature && id) {
+                aadePayload = {id, digest, signature};
+              }
+            } catch {
+              /* not JSON */
+            }
+          }
+          if (__DEV__) {
+            const rawInvoice = submitted.fiscalDoc?.invoiceUrl ?? '';
+            console.log(
+              `[VivaFlow] TransactionReceipt insert_orders done hasFiscal=${Boolean(
+                fiscalisationData?.trim(),
+              )} fiscalLen=${fiscalisationData?.length ?? 0} hasAadePayload=${Boolean(
+                aadePayload?.digest && aadePayload?.signature && aadePayload?.id,
+              )} invoicePreview=${String(rawInvoice).slice(
+                0,
+                120,
+              )}`,
+            );
+          }
           if (cancelled) {
             return;
           }
@@ -103,8 +137,46 @@ export function TransactionReceiptScreen({navigation, route}: Props): React.JSX.
             return;
           }
         }
+        if (paymentMethod === 'card' && (fiscalisationData || aadePayload)) {
+          if (__DEV__) {
+            console.log(
+              `[VivaFlow] TransactionReceipt launching Viva from insert_orders amount=${cart.items
+                .reduce((sum, item) => sum + item.lineTotal, 0)
+                .toFixed(2)} fiscalLen=${fiscalisationData?.length ?? 0} aadeId=${aadePayload?.id ?? ''}`,
+            );
+          }
+          const vivaUri = buildVivaPaymentUri({
+            clientTransactionId: String(orderNumber ?? ticket),
+            amountEuros: cart.items.reduce((sum, item) => sum + item.lineTotal, 0),
+            fiscalisationData,
+            aade: aadePayload
+              ? {
+                  providerId: aadePayload.id,
+                  digest: aadePayload.digest,
+                  signature: aadePayload.signature,
+                }
+              : undefined,
+          });
+          try {
+            await Linking.openURL(vivaUri);
+            if (__DEV__) {
+              console.log('[VivaFlow] TransactionReceipt Linking.openURL resolved');
+            }
+          } catch (e) {
+            if (__DEV__) {
+              console.log(
+                `[VivaFlow] TransactionReceipt Linking.openURL failed msg=${(e as Error)?.message ?? String(
+                  e,
+                )}`,
+              );
+            }
+          }
+        } else if (paymentMethod === 'card' && __DEV__) {
+          console.log('[VivaFlow] TransactionReceipt card path: missing fiscalisationData after insert_orders');
+        }
+
         try {
-          const printed = await printFinalReceipt(session, cart, {
+          const printPromise = printFinalReceipt(session, cart, {
             orderNumber: ticket,
             createdAt: new Date(),
             companyName: 'Garsonista',
@@ -112,23 +184,19 @@ export function TransactionReceiptScreen({navigation, route}: Props): React.JSX.
             tableLabel: tableLabelFor(cart.type, cart.tableId),
             serviceLabel: cart.type === 'dine-in' ? 'Κατανάλωση στο χώρο' : 'Takeaway',
           });
+          const timeoutPromise = new Promise<null>(resolve =>
+            setTimeout(() => resolve(null), PRINT_TIMEOUT_MS),
+          );
+          const printed = await Promise.race([printPromise, timeoutPromise]);
           if (!cancelled) {
-            setReceiptPreview(printed.preview);
+            if (printed && 'preview' in printed) {
+              setReceiptPreview(printed.preview);
+            } else if (__DEV__) {
+              console.log('[VivaFlow] TransactionReceipt print timeout (non-blocking)');
+            }
           }
         } catch {
           /* optional */
-        }
-        if (paymentMethod === 'card' && fiscalisationData) {
-          const vivaUri = buildVivaPaymentUri({
-            clientTransactionId: String(orderNumber ?? ticket),
-            amountEuros: cart.items.reduce((sum, item) => sum + item.lineTotal, 0),
-            fiscalisationData,
-          });
-          try {
-            await Linking.openURL(vivaUri);
-          } catch {
-            /* continue to receipt */
-          }
         }
         clearCart();
       } catch {
