@@ -137,6 +137,18 @@ export const shadowChoiceCard: ViewStyle = Platform.select({
   default: {},
 });
 
+/** Circular top brand logo — contrast on `bgSecondary` headers. */
+export const shadowTopBrandLogo: ViewStyle = Platform.select({
+  ios: {
+    shadowColor: '#000000',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.22,
+    shadowRadius: 7,
+  },
+  android: {elevation: 5},
+  default: {},
+});
+
 export const shadowFooterUp: ViewStyle = Platform.select({
   ios: {
     shadowColor: '#000000',
@@ -186,12 +198,21 @@ export const typeCaptionSm: TextStyle = {
 };
 
 /**
- * DFC / `kiosk_image3` strip at the very top. Use everywhere **except** `MenuScreen` (`menuHeaderBrandLogo` stays bar-specific there).
+ * DFC / `kiosk_image3` at the very top — circular brand mark (wrap + image). Use `KioskTopBrandLogo` or pair both styles.
  */
-export const kioskTopBrandLogo: ImageStyle = {
-  width: 350,
+export const kioskTopBrandLogoWrap: ViewStyle = {
+  width: 100,
   height: 100,
-  maxWidth: '85%',
+  borderRadius: 50,
+  backgroundColor: palette.bgPrimary,
+  marginVertical: 4,
+  ...shadowTopBrandLogo,
+};
+
+export const kioskTopBrandLogo: ImageStyle = {
+  width: '100%',
+  height: '100%',
+  borderRadius: 50,
 };
 
 export const navigationTheme: Theme = {

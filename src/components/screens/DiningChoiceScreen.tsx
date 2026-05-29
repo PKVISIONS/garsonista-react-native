@@ -1,11 +1,13 @@
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useMemo} from 'react';
-import {Image, Platform, Pressable, StyleSheet, Text, View} from 'react-native';
+import {Image, Platform, StyleSheet, Text, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {ROUTES} from '@constants/routes';
 import type {RootStackParamList} from '@navigation/types';
 import {useAuthStore} from '@store';
-import {kioskTopBrandLogo, theme, shadowChoiceCard} from '@theme/kiosk';
+import {theme, shadowChoiceCard} from '@theme/kiosk';
+import {KioskPressable as Pressable} from '../KioskPressable';
+import {KioskTopBrandLogo} from '../KioskTopBrandLogo';
 import {kioskLogoImageUri, remoteUriSource} from '@utils/productImage';
 import {prepareCartForMenu} from '@utils/menuPreload';
 import {translate} from '../../stores/Localization/LocalizationStore';
@@ -57,13 +59,7 @@ export function DiningChoiceScreen({navigation}: Props): React.JSX.Element {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.topBrand}>
-        <Image
-          source={topBrandSource}
-          style={styles.topBrandLogo}
-          resizeMode="contain"
-          fadeDuration={Platform.OS === 'android' ? 0 : undefined}
-          accessibilityLabel={translate('kiosk.receipt.brand')}
-        />
+        <KioskTopBrandLogo source={topBrandSource} />
       </View>
       <View style={styles.centerWrap}>
         <View style={styles.centeredContent}>
@@ -96,9 +92,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 4,
     paddingBottom: 8,
-  },
-  topBrandLogo: {
-    ...kioskTopBrandLogo,
   },
   centerWrap: {
     flex: 1,

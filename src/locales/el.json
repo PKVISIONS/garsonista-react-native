@@ -39,9 +39,9 @@
       "alertCancel": "Ακύρωση",
       "alertContinue": "Συνέχεια",
       "viewOrder": "Προβολή παραγγελίας",
-      "startOver": "Ξεκίνα από την αρχή",
-      "startOverModalTitle": "Θέλετε να ξεκινήσετε από την αρχή;",
-      "startOverModalMessage": "Όλα τα είδη στο καλάθι σας θα χαθούν.",
+      "startOver": "Ξεκινήστε από την αρχή",
+      "startOverModalTitle": "Είστε σίγουροι ότι θέλετε να ξεκινήσετε;",
+      "startOverModalMessage": "",
       "startOverModalYes": "Ναι, θέλω να ακυρώσω την παραγγελία μου.",
       "startOverModalNo": "Όχι, δεν θέλω να ακυρώσω την παραγγελία μου.",
       "startOverModalBackdropA11y": "Κλείσιμο"
@@ -52,7 +52,7 @@
       "remove": "Αφαίρεση",
       "total": "Σύνολο",
       "complete": "Ολοκλήρωση παραγγελίας",
-      "fromStart": "Από την αρχή",
+      "fromStart": "Ξεκινήστε από την αρχή",
       "backToMenu": "Πίσω στο μενού"
     },
     "product": {
@@ -89,7 +89,11 @@
       "newOrder": "Νέα παραγγελία"
     },
     "cardFailed": {
-      "title": "Η πληρωμή με κάρτα απέτυχε.",
+      "title": "Ουπς! Η κάρτα δεν έγινε δεκτή.",
+      "subtitle": "Μπορείς να ξαναδοκιμάσεις ή να επιλέξεις εναλλακτικό τρόπο.",
+      "payCash": "Πλήρωσε με μετρητά",
+      "retryCard": "Προσπάθησε ξανά με κάρτα",
+      "cancel": "Ακύρωση πληρωμής",
       "back": "Επιστροφή"
     },
     "paymentCard": {

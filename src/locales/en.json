@@ -40,8 +40,8 @@
       "alertContinue": "Continue",
       "viewOrder": "View order",
       "startOver": "Start from the beginning",
-      "startOverModalTitle": "Do you want to start over?",
-      "startOverModalMessage": "Everything in your cart will be lost.",
+      "startOverModalTitle": "Are you sure you want to start over?",
+      "startOverModalMessage": "",
       "startOverModalYes": "Yes, I want to cancel my order.",
       "startOverModalNo": "No, I don't want to cancel my order.",
       "startOverModalBackdropA11y": "Close"
@@ -89,7 +89,11 @@
       "newOrder": "New order"
     },
     "cardFailed": {
-      "title": "Card payment failed.",
+      "title": "Oops! Your card was not accepted.",
+      "subtitle": "You can try again or choose another payment method.",
+      "payCash": "Pay with cash",
+      "retryCard": "Try again with card",
+      "cancel": "Cancel payment",
       "back": "Back"
     },
     "paymentCard": {

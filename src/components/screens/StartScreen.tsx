@@ -1,7 +1,6 @@
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import React, {useEffect} from 'react';
 import {
-  Pressable,
   StatusBar,
   StyleSheet,
   Text,
@@ -9,6 +8,7 @@ import {
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import {KioskPressable as Pressable} from '../KioskPressable';
 import {KioskSplashLayout} from '../KioskSplashLayout';
 import {ROUTES} from '@constants/routes';
 import type {RootStackParamList} from '@navigation/types';

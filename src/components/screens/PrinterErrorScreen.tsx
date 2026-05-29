@@ -1,6 +1,7 @@
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React from 'react';
-import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {StyleSheet, Text, View} from 'react-native';
+import {KioskTouchableOpacity as TouchableOpacity} from '../KioskTouchableOpacity';
 import {ROUTES} from '@constants/routes';
 import type {RootStackParamList} from '@navigation/types';
 import {theme, titleSection} from '@theme/kiosk';

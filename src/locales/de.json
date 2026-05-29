@@ -40,8 +40,8 @@
       "alertContinue": "Weiter",
       "viewOrder": "Bestellung ansehen",
       "startOver": "Von vorne beginnen",
-      "startOverModalTitle": "Möchten Sie von vorne beginnen?",
-      "startOverModalMessage": "Der Inhalt Ihres Warenkorbs geht verloren.",
+      "startOverModalTitle": "Sind Sie sicher, dass Sie neu beginnen möchten?",
+      "startOverModalMessage": "",
       "startOverModalYes": "Ja, ich möchte meine Bestellung abbrechen.",
       "startOverModalNo": "Nein, ich möchte meine Bestellung nicht abbrechen.",
       "startOverModalBackdropA11y": "Schließen"
@@ -89,7 +89,11 @@
       "newOrder": "Neue Bestellung"
     },
     "cardFailed": {
-      "title": "Kartenzahlung fehlgeschlagen.",
+      "title": "Hoppla! Die Karte wurde nicht akzeptiert.",
+      "subtitle": "Sie können es erneut versuchen oder eine andere Zahlungsart wählen.",
+      "payCash": "Mit Bargeld zahlen",
+      "retryCard": "Erneut mit Karte versuchen",
+      "cancel": "Zahlung abbrechen",
       "back": "Zurück"
     },
     "paymentCard": {

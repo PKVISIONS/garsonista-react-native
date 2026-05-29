@@ -270,6 +270,7 @@ export function mapOptionGroups(raw: unknown): OptionGroup[] {
           multiSelect: atype === 1,
           values: nested.map((v: unknown) => {
             const ov = v as Record<string, unknown>;
+            const activates = num(ov.activate_idproduct_option, 0);
             return {
               id: num(ov.idoption_value ?? ov.id),
               groupId,
@@ -280,6 +281,7 @@ export function mapOptionGroups(raw: unknown): OptionGroup[] {
                   : null,
               priceDelta: optionValuePrice(ov),
               imageUrl: pickProductImageUrl(ov),
+              activatesGroupId: activates > 0 ? activates : null,
             };
           }),
         };
@@ -309,6 +311,7 @@ export function mapOptionGroups(raw: unknown): OptionGroup[] {
         };
         map.set(key, g);
       }
+      const activates = num(o.activate_idproduct_option, 0);
       const val: OptionValue = {
         id: num(o.idoption_value ?? o.id),
         groupId,
@@ -319,6 +322,7 @@ export function mapOptionGroups(raw: unknown): OptionGroup[] {
             : null,
         priceDelta: optionValuePrice(o),
         imageUrl: pickProductImageUrl(o),
+        activatesGroupId: activates > 0 ? activates : null,
       };
       g.values.push(val);
     }

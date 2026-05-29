@@ -7,13 +7,18 @@ import {
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {observer} from 'mobx-react-lite';
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {ActivityIndicator, Linking, StyleSheet, View} from 'react-native';
 import {ROUTES} from '@constants/routes';
-import {useAuthStore, useMenuPreloadStore, usePaymentStore} from '@store';
+import {useAuthStore, useCartStore, useMenuPreloadStore, usePaymentStore} from '@store';
+import {useFailedCardPaymentStore} from '../stores/Payment/FailedCardPaymentStore';
 import {localizationStore, translate} from '../stores/Localization/LocalizationStore';
 import {parseVivaCallbackUrl} from '@services/payment/vivaCallbackParser';
-import {revertSaleKiosk} from '@services/paymentService';
+import {
+  isVivaCallbackSuccess,
+  isVivaCallbackUrl,
+  navigateToCardFailed,
+} from '@services/payment/vivaFlow';
 import {useSubscriptionQuery} from '@hooks/useSubscriptionQuery';
 import {useOfflineDrain} from '@hooks/useOfflineDrain';
 import {LoginScreen} from '@screens/LoginScreen';
@@ -32,6 +37,8 @@ import {CardFailedScreen} from '@screens/CardFailedScreen';
 import {TaxCustomerScreen} from '@screens/TaxCustomerScreen';
 import {PrinterErrorScreen} from '@screens/PrinterErrorScreen';
 import {navigationTheme, theme} from '@theme/kiosk';
+import {KioskIdleActivityProvider} from '../context/KioskIdleActivityContext';
+import {useKioskIdleTimeout} from '@hooks/useKioskIdleTimeout';
 import {linking} from './linking';
 import type {RootStackParamList} from './types';
 
@@ -48,6 +55,12 @@ function DeepLinkBridge(): React.JSX.Element {
       if (__DEV__) {
         console.log(`[VivaFlow] Callback URL received: ${url}`);
       }
+      if (!isVivaCallbackUrl(url)) {
+        if (__DEV__) {
+          console.log('[VivaFlow] Ignoring non-Viva deep link');
+        }
+        return;
+      }
       setDeepLink(url);
       const fields = parseVivaCallbackUrl(url);
       if (__DEV__) {
@@ -55,56 +68,26 @@ function DeepLinkBridge(): React.JSX.Element {
           `[VivaFlow] Callback parsed status=${fields.status ?? 'null'} action=${fields.action ?? 'null'} txId=${fields.transactionId ?? 'null'} clientTxId=${fields.clientTransactionId ?? 'null'} eventId=${fields.transactionEventId ?? 'null'} amount=${fields.amount ?? 'null'} aadeTxId=${fields.aadeTransactionId ?? 'null'} message=${fields.message ?? 'null'}`,
         );
       }
-      if (fields.status === 'success') {
+      if (isVivaCallbackSuccess(fields)) {
         if (__DEV__) {
           console.log(
             '[VivaFlow] Callback decision: success -> navigate TransactionReceipt(card)',
           );
         }
         setPhase('success');
+        useCartStore.getState().clear();
+        useFailedCardPaymentStore.getState().clear();
         navigation.navigate(ROUTES.TransactionReceipt, {
           paymentMethod: 'card',
+          attemptId: Date.now(),
         });
-      } else if (fields.status === 'failed') {
-        if (__DEV__) {
-          console.log('[VivaFlow] Callback decision: failed -> navigate CardFailed');
-        }
-        const clientTxId = String(fields.clientTransactionId ?? '');
-        if (clientTxId.startsWith('AUTX') && clientTxId.length > 4) {
-          const idtaxdocument = clientTxId.slice(4);
-          if (__DEV__) {
-            console.log(
-              `[VivaFlow] Callback failed AUTX -> revert_sale_kiosk_ajax idtaxdocument=${idtaxdocument}`,
-            );
-          }
-          void revertSaleKiosk(idtaxdocument)
-            .then(res => {
-              if (__DEV__) {
-                console.log(
-                  `[VivaFlow] revert_sale_kiosk_ajax response=${String(res).slice(0, 200)}`,
-                );
-              }
-            })
-            .catch(e => {
-              if (__DEV__) {
-                console.log(
-                  `[VivaFlow] revert_sale_kiosk_ajax failed msg=${(e as Error)?.message ?? String(
-                    e,
-                  )}`,
-                );
-              }
-            });
-        }
-        setPhase('failed');
-        navigation.navigate(ROUTES.CardFailed);
-      } else if (fields.status) {
-        if (__DEV__) {
-          console.log('[VivaFlow] Callback decision: non-terminal status -> processing');
-        }
-        setPhase('processing');
-      } else if (__DEV__) {
-        console.log('[VivaFlow] Callback decision: missing status');
+        return;
       }
+      if (__DEV__) {
+        console.log('[VivaFlow] Callback decision: error -> navigate CardFailed');
+      }
+      setPhase('failed');
+      navigateToCardFailed(navigation, fields);
     };
 
     const sub = Linking.addEventListener('url', ({url}) => {
@@ -147,6 +130,13 @@ export const AppNavigator = observer(function AppNavigator(): React.JSX.Element 
     menuBootstrapPending &&
     !prerenderComplete;
   const showBootOverlay = booting || waitingForMenuPrerender;
+  const [navigationReady, setNavigationReady] = useState(false);
+
+  useEffect(() => {
+    if (showBootOverlay) {
+      setNavigationReady(false);
+    }
+  }, [showBootOverlay]);
 
   useEffect(() => {
     void restore();
@@ -156,16 +146,27 @@ export const AppNavigator = observer(function AppNavigator(): React.JSX.Element 
   useOfflineDrain(Boolean(session));
 
   const stackTheme: Theme = navigationTheme;
+  const idleEnabled = Boolean(session) && !showBootOverlay;
+  const {
+    resetIdle,
+    panHandlers: idlePanHandlers,
+    rootTouchProps: idleTouchProps,
+    timerActive: idleTimerActive,
+  } = useKioskIdleTimeout(navigationRef, idleEnabled, navigationReady);
 
   return (
-    <View style={styles.appRoot}>
-      {showBootOverlay ? (
-        <View style={styles.bootOverlay}>
-          <ActivityIndicator size="large" color={theme.color.accentPrimary} />
-        </View>
-      ) : null}
-      {!showBootOverlay ? (
-        <NavigationContainer ref={navigationRef} linking={linking} theme={stackTheme}>
+    <KioskIdleActivityProvider resetIdle={resetIdle}>
+    <View style={styles.appRoot} collapsable={false}>
+        <NavigationContainer
+          ref={navigationRef}
+          linking={linking}
+          theme={stackTheme}
+          onReady={() => setNavigationReady(true)}>
+      <View
+        style={styles.navTouchRoot}
+        collapsable={false}
+        {...(idleTimerActive ? idleTouchProps : undefined)}
+        {...(idleTimerActive ? idlePanHandlers : undefined)}>
       <Stack.Navigator
         key={`${session ? 'app' : 'auth'}-${language}`}
         initialRouteName={
@@ -270,14 +271,23 @@ export const AppNavigator = observer(function AppNavigator(): React.JSX.Element 
         )}
       </Stack.Navigator>
       {session ? <DeepLinkBridge /> : null}
+      </View>
         </NavigationContainer>
+      {showBootOverlay ? (
+        <View style={styles.bootOverlay} pointerEvents="auto">
+          <ActivityIndicator size="large" color={theme.color.accentPrimary} />
+        </View>
       ) : null}
     </View>
+    </KioskIdleActivityProvider>
   );
 });
 
 const styles = StyleSheet.create({
   appRoot: {
+    flex: 1,
+  },
+  navTouchRoot: {
     flex: 1,
   },
   bootOverlay: {

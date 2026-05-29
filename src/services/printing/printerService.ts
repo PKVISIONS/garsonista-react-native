@@ -1,18 +1,51 @@
 import {Linking, NativeModules, Platform} from 'react-native';
 import type {Cart} from '@models';
 import type {AuthSession} from '@models/auth';
-import {buildFinalReceipt} from './receiptBuilder';
+import {buildFinalReceipt, type ReceiptContext} from './receiptBuilder';
 
 export type PrinterKind = 'sunmi' | 'thermal-bluetooth' | 'thermal-usb' | 'tcp' | 'pdf';
 
-type ReceiptContext = {
-  orderNumber?: number | null;
-  createdAt?: Date;
-  companyName?: string | null;
-  branchName?: string | null;
-  tableLabel?: string | null;
-  serviceLabel?: string | null;
-};
+export type {ReceiptContext};
+
+const LOG_TAG = '[ReceiptPrint]';
+
+/** Strip Sunmi line protocol (`C..n`, `L.Bx`, etc.) for readable logs. */
+function decodeReceiptLineForLog(line: string): string {
+  if (line.length >= 4) {
+    const align = line[0];
+    const bold = line[1];
+    const size = line[2];
+    if (
+      (align === 'C' || align === 'L') &&
+      (bold === 'B' || bold === '.') &&
+      (size === 'n' || size === 'l' || size === 'x')
+    ) {
+      return line.slice(3).replace('\t', '  →  ');
+    }
+  }
+  return line;
+}
+
+function logReceiptPayload(
+  ctx: ReceiptContext,
+  plainText: string,
+  preview: ReturnType<typeof buildFinalReceipt>['preview'],
+): void {
+  const decoded = plainText
+    .split('\n')
+    .map(decodeReceiptLineForLog)
+    .join('\n');
+  console.log(`${LOG_TAG} ========== RECEIPT ==========`);
+  console.log(
+    `${LOG_TAG} order=${ctx.orderNumber ?? '—'} payment=${ctx.paymentMethod ?? '—'} service=${ctx.serviceType ?? ctx.serviceLabel ?? '—'} items=${preview.items.length}`,
+  );
+  console.log(
+    `${LOG_TAG} company display=${ctx.companyDescription ?? '—'} legal=${ctx.companyName ?? '—'} afm=${ctx.taxId ?? '—'} doy=${ctx.taxOffice ?? '—'}`,
+  );
+  console.log(`${LOG_TAG} --- receipt body ---\n${decoded}`);
+  console.log(`${LOG_TAG} --- raw payload (${plainText.length} chars) ---\n${plainText}`);
+  console.log(`${LOG_TAG} =============================`);
+}
 
 function getSunmiPrinter(): {
   printRaw?: (bytes: number[]) => Promise<void> | void;
@@ -30,6 +63,7 @@ export async function printFinalReceipt(
   ctx: ReceiptContext = {},
 ): Promise<{preview: ReturnType<typeof buildFinalReceipt>['preview']}> {
   const receipt = buildFinalReceipt(session, cart, ctx);
+  logReceiptPayload(ctx, receipt.plainText, receipt.preview);
   const sunmi = getSunmiPrinter();
 
   if (Platform.OS === 'android' && sunmi) {

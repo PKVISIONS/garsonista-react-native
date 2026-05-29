@@ -1,12 +1,12 @@
 import React, {useState} from 'react';
 import {
   Modal,
-  Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import {observer} from 'mobx-react-lite';
+import {KioskPressable as Pressable} from './KioskPressable';
 import {theme} from '@theme/kiosk';
 import {localizationStore, translate} from '../stores/Localization/LocalizationStore';
 

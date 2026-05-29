@@ -3,11 +3,11 @@ import {
   Image,
   Modal,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import {KioskPressable as Pressable} from './KioskPressable';
 import {cardShadow, theme} from '@theme/kiosk';
 import {translate} from '../stores/Localization/LocalizationStore';
 
@@ -52,9 +52,11 @@ export function StartOverConfirmModal({
             <Text style={styles.title}>
               {translate('kiosk.menu.startOverModalTitle')}
             </Text>
-            <Text style={styles.subtitle}>
-              {translate('kiosk.menu.startOverModalMessage')}
-            </Text>
+            {translate('kiosk.menu.startOverModalMessage') ? (
+              <Text style={styles.subtitle}>
+                {translate('kiosk.menu.startOverModalMessage')}
+              </Text>
+            ) : null}
             <View style={styles.btnRow}>
               <Pressable
                 accessibilityRole="button"

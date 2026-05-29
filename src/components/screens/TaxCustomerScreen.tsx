@@ -5,11 +5,11 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import type {RootStackParamList} from '@navigation/types';
 import {lookupAfm} from '@services/taxService';
+import {KioskTouchableOpacity as TouchableOpacity} from '../KioskTouchableOpacity';
 import {theme, titleSection} from '@theme/kiosk';
 import {translate} from '../../stores/Localization/LocalizationStore';
 

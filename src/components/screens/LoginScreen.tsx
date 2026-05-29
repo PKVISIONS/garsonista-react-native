@@ -7,10 +7,10 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   useWindowDimensions,
   View,
 } from 'react-native';
+import {KioskTouchableOpacity as TouchableOpacity} from '../KioskTouchableOpacity';
 import {LanguageSelector} from '../LanguageSelector';
 import {useAuthStore} from '@store';
 import {theme, typeCaptionSm} from '@theme/kiosk';

@@ -2,51 +2,79 @@ import {useCallback, useEffect, useRef} from 'react';
 import {AppState, PanResponder, type AppStateStatus} from 'react-native';
 
 /**
- * Resets idle timer on any touch (legacy resetIdleTimer parity).
+ * Kiosk inactivity timer — resets on any touch (legacy `resetIdleTimer`).
+ * Attach `panHandlers` + `rootTouchProps` on the app root so Pressables still receive taps.
  */
 export function useIdleTimer(
   timeoutMs: number,
   onIdle: () => void,
-): {panHandlers: ReturnType<typeof PanResponder.create>['panHandlers']} {
+  enabled: boolean,
+): {
+  panHandlers: ReturnType<typeof PanResponder.create>['panHandlers'];
+  rootTouchProps: {onTouchStart: () => void};
+  resetIdle: () => void;
+} {
   const deadline = useRef(Date.now() + timeoutMs);
   const appState = useRef<AppStateStatus>(AppState.currentState);
+  const onIdleRef = useRef(onIdle);
+  const resetIdleRef = useRef<() => void>(() => {});
+  onIdleRef.current = onIdle;
 
-  const schedule = useCallback(() => {
+  const resetIdle = useCallback(() => {
+    if (!enabled) {
+      return;
+    }
     deadline.current = Date.now() + timeoutMs;
-  }, [timeoutMs]);
+  }, [enabled, timeoutMs]);
+
+  resetIdleRef.current = resetIdle;
 
   useEffect(() => {
+    if (enabled) {
+      resetIdle();
+    }
+  }, [enabled, resetIdle]);
+
+  useEffect(() => {
+    if (!enabled) {
+      return;
+    }
     const id = setInterval(() => {
       if (Date.now() > deadline.current) {
-        onIdle();
-        schedule();
+        onIdleRef.current();
+        deadline.current = Date.now() + timeoutMs;
       }
-    }, 1000);
+    }, 250);
     return () => clearInterval(id);
-  }, [onIdle, schedule]);
+  }, [enabled, timeoutMs]);
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', next => {
       if (appState.current.match(/inactive|background/) && next === 'active') {
-        schedule();
+        resetIdleRef.current();
       }
       appState.current = next;
     });
     return () => sub.remove();
-  }, [schedule]);
+  }, []);
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponderCapture: () => {
-        schedule();
+        resetIdleRef.current();
         return false;
       },
-      onMoveShouldSetPanResponderCapture: () => {
-        schedule();
+      onMoveShouldSetPanResponderCapture: () => false,
+      onStartShouldSetPanResponder: () => {
+        resetIdleRef.current();
         return false;
       },
     }),
-  );
+  ).current;
 
-  return {panHandlers: panResponder.current.panHandlers};
+  const rootTouchProps = {
+    onTouchStart: () => resetIdleRef.current(),
+  };
+
+  return {panHandlers: panResponder.panHandlers, rootTouchProps, resetIdle};
 }

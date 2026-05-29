@@ -7,13 +7,20 @@
  * - `input.moditem+label` / `:checked+label` option tiles
  * - `.kiosk-add-btn-section` + `.general_btn` / `.general_btn2` + `.kiosk-add-btn-qty-control`
  */
+import {useFocusEffect} from '@react-navigation/native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import React, {useCallback, useEffect, useLayoutEffect, useMemo, useState} from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Alert,
   Image,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -24,6 +31,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
+import {KioskPressable as Pressable} from '../KioskPressable';
 import {ROUTES} from '@constants/routes';
 import type {RootStackParamList} from '@navigation/types';
 import type {OptionGroup, OptionValue, SelectedOption} from '@models';
@@ -31,6 +39,12 @@ import {priceProductsForTable} from '@services/catalogService';
 import {useAuthStore, useCartStore, useCatalogStore} from '@store';
 import {cardShadow, shadowBurgerCard, theme} from '@theme/kiosk';
 import {pickCatalogText} from '@utils/catalogText';
+import {
+  buildSelectedOptions,
+  isOptionGroupVisible,
+  pruneHiddenGroupSelections,
+  visibleOptionGroups,
+} from '@utils/optionGroupActivation';
 import {
   imagesBaseUrlFromWireRow,
   productImageSource,
@@ -74,6 +88,14 @@ export function ProductDetailScreen({navigation, route}: Props): React.JSX.Eleme
   const lang = localizationStore.currentLanguageCode;
   const [qty, setQty] = useState(1);
   const [selections, setSelections] = useState<Record<number, number[]>>({});
+  const initializedProductIdRef = useRef<number | undefined>(undefined);
+
+  useFocusEffect(
+    useCallback(() => {
+      initializedProductIdRef.current = undefined;
+      setQty(1);
+    }, [productId]),
+  );
 
   const product = useMemo(() => {
     const raw = data?.products.find(p => p.id === productId);
@@ -159,11 +181,19 @@ export function ProductDetailScreen({navigation, route}: Props): React.JSX.Eleme
     });
   }, [data, productId]);
 
-  /** Required groups with a single choice are pre-selected; multi-choice required are not highlighted in the title. */
+  /**
+   * On product open: no ingredient groups until an activating value is chosen (see
+   * `visibleOptionGroups`). Required single-choice groups in the visible set may be
+   * pre-selected (legacy `.moditem:not(:disabled)`); activation targets stay hidden
+   * until then.
+   */
   useLayoutEffect(() => {
+    const openingNewProduct = initializedProductIdRef.current !== productId;
+    initializedProductIdRef.current = productId;
+
     setSelections(prev => {
-      const next: Record<number, number[]> = {...prev};
-      let changed = false;
+      const next: Record<number, number[]> = openingNewProduct ? {} : {...prev};
+      let changed = openingNewProduct;
       const validIds = new Set(optionGroups.map(g => g.id));
       for (const key of Object.keys(next)) {
         const id = Number(key);
@@ -172,7 +202,7 @@ export function ProductDetailScreen({navigation, route}: Props): React.JSX.Eleme
           changed = true;
         }
       }
-      for (const g of optionGroups) {
+      for (const g of visibleOptionGroups(optionGroups, next)) {
         if (g.required && g.values.length === 1) {
           const only = g.values[0];
           if (only && (next[g.id]?.length ?? 0) === 0) {
@@ -181,13 +211,25 @@ export function ProductDetailScreen({navigation, route}: Props): React.JSX.Eleme
           }
         }
       }
-      return changed ? next : prev;
+      let result = next;
+      for (const g of optionGroups) {
+        if ((next[g.id]?.length ?? 0) > 0 && !isOptionGroupVisible(g.id, optionGroups, next)) {
+          result = pruneHiddenGroupSelections(optionGroups, next);
+          changed = true;
+          break;
+        }
+      }
+      if (!changed) {
+        return prev;
+      }
+      return result;
     });
   }, [productId, optionGroups]);
 
   const toggleOption = useCallback((group: OptionGroup, valueId: number) => {
     setSelections(prev => {
       const cur = prev[group.id] ?? [];
+      let next: Record<number, number[]>;
       if (group.multiSelect) {
         const set = new Set(cur);
         if (set.has(valueId)) {
@@ -195,30 +237,23 @@ export function ProductDetailScreen({navigation, route}: Props): React.JSX.Eleme
         } else {
           set.add(valueId);
         }
-        return {...prev, [group.id]: [...set]};
+        next = {...prev, [group.id]: [...set]};
+      } else {
+        next = {...prev, [group.id]: [valueId]};
       }
-      return {...prev, [group.id]: [valueId]};
+      return pruneHiddenGroupSelections(optionGroups, next);
     });
-  }, []);
+  }, [optionGroups]);
 
-  const selectedOptions: SelectedOption[] = useMemo(() => {
-    const out: SelectedOption[] = [];
-    for (const g of optionGroups) {
-      const ids = selections[g.id] ?? [];
-      for (const id of ids) {
-        const v = g.values.find(x => x.id === id);
-        if (v) {
-          out.push({
-            groupId: g.id,
-            valueId: v.id,
-            label: pickCatalogText(lang, v.name, v.nameEn),
-            priceDelta: v.priceDelta,
-          });
-        }
-      }
-    }
-    return out;
-  }, [lang, optionGroups, selections]);
+  const visibleGroups = useMemo(
+    () => visibleOptionGroups(optionGroups, selections),
+    [optionGroups, selections],
+  );
+
+  const selectedOptions: SelectedOption[] = useMemo(
+    () => buildSelectedOptions(lang, optionGroups, selections, pickCatalogText),
+    [lang, optionGroups, selections],
+  );
 
   const optionsExtra = useMemo(
     () => selectedOptions.reduce((s, o) => s + o.priceDelta, 0),
@@ -239,7 +274,7 @@ export function ProductDetailScreen({navigation, route}: Props): React.JSX.Eleme
   const imgSrc = productImageSource(product.imageUrl, imagesBaseUrl);
 
   const onAdd = () => {
-    for (const g of optionGroups) {
+    for (const g of visibleGroups) {
       if (g.required) {
         const sel = selections[g.id] ?? [];
         if (sel.length === 0) {
@@ -339,7 +374,7 @@ export function ProductDetailScreen({navigation, route}: Props): React.JSX.Eleme
             </View>
           </View>
 
-          {optionGroups.map(group => (
+          {visibleGroups.map(group => (
             <View key={group.id} style={styles.section}>
               {/* server-provided — not localizable via translate() */}
               <Text style={styles.sectionTitle}>

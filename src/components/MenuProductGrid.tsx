@@ -4,13 +4,13 @@ import {
   Platform,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import type {Category, Product} from '@models';
 import {theme, cardShadow} from '@theme/kiosk';
 import {pickCatalogText} from '@utils/catalogText';
 import {MENU_GRID_GAP} from '@constants/menuLayout';
+import {KioskTouchableOpacity as TouchableOpacity} from './KioskTouchableOpacity';
 import {ProductGridImage, PRODUCT_IMAGE_ASPECT_RATIO} from './ProductGridImage';
 
 type ProductTileProps = {

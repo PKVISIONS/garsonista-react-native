@@ -1,10 +1,9 @@
 import {CommonActions} from '@react-navigation/native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import React, {useMemo} from 'react';
+import React, {useMemo, useState} from 'react';
 import {
   Image,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,7 +15,10 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {ROUTES} from '@constants/routes';
 import type {RootStackParamList} from '@navigation/types';
 import {useAuthStore, useCartStore, useCatalogStore} from '@store';
-import {theme, cardShadow, shadowFooterUp, kioskTopBrandLogo} from '@theme/kiosk';
+import {theme, cardShadow, shadowFooterUp} from '@theme/kiosk';
+import {KioskPressable as Pressable} from '../KioskPressable';
+import {KioskTopBrandLogo} from '../KioskTopBrandLogo';
+import {StartOverConfirmModal} from '../StartOverConfirmModal';
 import {pickCatalogText} from '@utils/catalogText';
 import {
   imagesBaseUrlFromWireRow,
@@ -46,6 +48,7 @@ export function OrderReviewScreen({navigation}: Props): React.JSX.Element {
   const {width} = useWindowDimensions();
   const cardMargin = Math.max(12, Math.round(width * 0.03));
   const lang = localizationStore.currentLanguageCode;
+  const [startOverModalVisible, setStartOverModalVisible] = useState(false);
 
   const total = useMemo(() => {
     if (!cart) {
@@ -55,6 +58,7 @@ export function OrderReviewScreen({navigation}: Props): React.JSX.Element {
   }, [cart]);
 
   const resetToDining = () => {
+    setStartOverModalVisible(false);
     clear();
     navigation.dispatch(
       CommonActions.reset({
@@ -67,12 +71,7 @@ export function OrderReviewScreen({navigation}: Props): React.JSX.Element {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
       <View style={styles.header}>
-        <Image
-          source={logoSource}
-          style={styles.headerBrandLogo as ImageStyle}
-          resizeMode="contain"
-          accessibilityLabel={translate('kiosk.receipt.brand')}
-        />
+        <KioskTopBrandLogo source={logoSource} />
         <Text style={styles.orderTitle}>{translate('kiosk.orderReview.title')}</Text>
       </View>
 
@@ -200,7 +199,9 @@ export function OrderReviewScreen({navigation}: Props): React.JSX.Element {
           </Pressable>
         </View>
         <View style={styles.secondaryRow}>
-          <Pressable style={styles.secondaryBtn} onPress={resetToDining}>
+          <Pressable
+            style={styles.secondaryBtn}
+            onPress={() => setStartOverModalVisible(true)}>
             <Text style={styles.secondaryBtnText}>{translate('kiosk.orderReview.fromStart')}</Text>
           </Pressable>
           <Pressable
@@ -216,6 +217,11 @@ export function OrderReviewScreen({navigation}: Props): React.JSX.Element {
           </Pressable>
         </View>
       </View>
+      <StartOverConfirmModal
+        visible={startOverModalVisible}
+        onClose={() => setStartOverModalVisible(false)}
+        onConfirm={resetToDining}
+      />
     </SafeAreaView>
   );
 }
@@ -230,9 +236,6 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 12,
     gap: 10,
-  },
-  headerBrandLogo: {
-    ...kioskTopBrandLogo,
   },
   orderTitle: {
     fontSize: 22,

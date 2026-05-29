@@ -7,7 +7,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -17,6 +16,8 @@ import type {Category} from '@models';
 import {resolveDefaultTableId} from '@services/catalogService';
 import {useAuthStore, useCartStore, useCatalogStore, useMenuPreloadStore} from '@store';
 import {theme} from '@theme/kiosk';
+import {KioskTouchableOpacity as TouchableOpacity} from '../KioskTouchableOpacity';
+import {KioskTopBrandLogo} from '../KioskTopBrandLogo';
 import {pickCatalogText} from '@utils/catalogText';
 import {
   imagesBaseUrlFromWireRow,
@@ -180,11 +181,9 @@ export function MenuScreen({navigation, route}: Props): React.JSX.Element {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.menuTopBar} accessibilityRole="header">
-        <Image
+        <KioskTopBrandLogo
           source={menuHeaderImageSource}
           style={styles.menuHeaderBrandLogo}
-          resizeMode="contain"
-          accessibilityLabel={translate('kiosk.receipt.brand')}
         />
       </View>
       <View style={styles.body}>
@@ -287,9 +286,6 @@ const styles = StyleSheet.create({
     backgroundColor: theme.color.bgSecondary,
   },
   menuHeaderBrandLogo: {
-    width: 350,
-    height: 100,
-    maxWidth: '85%',
     flexShrink: 0,
     marginLeft: 0,
   },

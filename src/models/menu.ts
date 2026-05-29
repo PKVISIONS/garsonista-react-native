@@ -39,4 +39,6 @@ export interface OptionValue {
   nameEn?: string | null;
   priceDelta: number;
   imageUrl?: string | null;
+  /** `activate_idproduct_option` — show this option group only when this value is selected. */
+  activatesGroupId?: number | null;
 }

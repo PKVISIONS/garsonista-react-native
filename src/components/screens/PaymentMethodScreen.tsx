@@ -5,11 +5,10 @@
  * `credit-card-solid (5) 2.png` → `kiosk-payment-coins.png`, `kiosk-payment-card.png`.
  */
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import React, {useMemo} from 'react';
+import React, {useMemo, useState} from 'react';
 import {
   Image,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -18,9 +17,17 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {ROUTES} from '@constants/routes';
 import type {RootStackParamList} from '@navigation/types';
-import {useAuthStore, useCartStore} from '@store';
-import {kioskTopBrandLogo, shadowChoiceCard, theme} from '@theme/kiosk';
+import {useAuthStore, useCartStore, useCatalogStore} from '@store';
+import {printFinalReceipt} from '@services/printing/printerService';
+import {nextTicketNumber} from '@services/ticketCounter';
+import {shadowChoiceCard, theme} from '@theme/kiosk';
+import {
+  buildReceiptPrintContext,
+  ensureReceiptCatalogPremises,
+} from '@utils/receiptCompanyContext';
 import {kioskLogoImageUri, remoteUriSource} from '@utils/productImage';
+import {KioskPressable as Pressable} from '../KioskPressable';
+import {KioskTopBrandLogo} from '../KioskTopBrandLogo';
 import {translate} from '../../stores/Localization/LocalizationStore';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PaymentMethod'>;
@@ -42,8 +49,13 @@ function KioskPaymentIcon({variant}: {variant: 'cash' | 'card'}): React.JSX.Elem
   );
 }
 
+const tableLabelFor = (type: 'dine-in' | 'takeaway', tableId: number) =>
+  type === 'dine-in' ? `Τραπέζι ${tableId}` : 'Takeaway';
+
 export function PaymentMethodScreen({navigation}: Props): React.JSX.Element {
+  const session = useAuthStore(s => s.session);
   const wireRow = useAuthStore(s => s.wireRow);
+  const [cashPrinting, setCashPrinting] = useState(false);
   const brandLogoUri = useMemo(() => kioskLogoImageUri(wireRow), [wireRow]);
   const topBrandSource = brandLogoUri
     ? remoteUriSource(brandLogoUri)
@@ -78,16 +90,46 @@ export function PaymentMethodScreen({navigation}: Props): React.JSX.Element {
     });
   };
 
+  const openCashFlow = async () => {
+    const ticket = nextTicketNumber();
+    if (session && cart) {
+      setCashPrinting(true);
+      try {
+        const catalog = await ensureReceiptCatalogPremises(
+          useCatalogStore.getState().data,
+        );
+        if (catalog && catalog.storePremises.length > 0) {
+          useCatalogStore.getState().setBootstrap(catalog);
+        }
+        await printFinalReceipt(
+          session,
+          cart,
+          buildReceiptPrintContext(wireRow, cart, {
+            orderNumber: ticket,
+            createdAt: new Date(),
+            paymentMethod: 'cash',
+            tableLabel: tableLabelFor(cart.type, cart.tableId),
+            serviceLabel:
+              cart.type === 'dine-in' ? 'Κατανάλωση στο χώρο' : 'Takeaway',
+          }, catalog),
+        );
+      } catch {
+        /* continue to thank-you even if printer fails */
+      } finally {
+        setCashPrinting(false);
+      }
+    }
+    navigation.navigate(ROUTES.TransactionReceipt, {
+      paymentMethod: 'cash',
+      orderNumber: ticket,
+      receiptPrinted: true,
+    });
+  };
+
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <View style={styles.topBrand}>
-        <Image
-          source={topBrandSource}
-          style={styles.topBrandLogo}
-          resizeMode="contain"
-          fadeDuration={Platform.OS === 'android' ? 0 : undefined}
-          accessibilityLabel={translate('kiosk.receipt.brand')}
-        />
+        <KioskTopBrandLogo source={topBrandSource} />
       </View>
       <View style={[styles.body, {paddingHorizontal: horizontalPad}]}>
         <View style={styles.vertSpacer} />
@@ -98,16 +140,13 @@ export function PaymentMethodScreen({navigation}: Props): React.JSX.Element {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={translate('kiosk.pay.a11yCash')}
+              disabled={cashPrinting}
               style={({pressed}) => [
                 styles.choiceCard,
-                pressed && styles.choicePressed,
+                (pressed || cashPrinting) && styles.choicePressed,
               ]}
               android_ripple={{color: 'rgba(0,0,0,0.06)'}}
-              onPress={() =>
-                navigation.navigate(ROUTES.TransactionReceipt, {
-                  paymentMethod: 'cash',
-                })
-              }>
+              onPress={() => void openCashFlow()}>
               <KioskPaymentIcon variant="cash" />
               <Text style={styles.choiceText}>{translate('kiosk.pay.cash')}</Text>
             </Pressable>
@@ -159,9 +198,6 @@ const styles = StyleSheet.create({
     paddingTop: 4,
     paddingBottom: 8,
     backgroundColor: theme.color.bgMuted,
-  },
-  topBrandLogo: {
-    ...kioskTopBrandLogo,
   },
   body: {
     flex: 1,

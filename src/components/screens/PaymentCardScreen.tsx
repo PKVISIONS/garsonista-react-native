@@ -1,15 +1,17 @@
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useEffect, useRef} from 'react';
-import {Linking, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {Linking, StyleSheet, Text, View} from 'react-native';
+import {KioskTouchableOpacity as TouchableOpacity} from '../KioskTouchableOpacity';
 import type {RootStackParamList} from '@navigation/types';
 import {buildVivaPaymentUri} from '@services/payment/vivaDeepLink';
+import {navigateToCardFailed} from '@services/payment/vivaFlow';
 import {usePaymentStore} from '@store';
 import {theme, titleSection} from '@theme/kiosk';
 import {translate} from '../../stores/Localization/LocalizationStore';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PaymentCard'>;
 
-export function PaymentCardScreen({route}: Props): React.JSX.Element {
+export function PaymentCardScreen({route, navigation}: Props): React.JSX.Element {
   const {amountEuros, fiscalisationData, clientTransactionId} = route.params;
   const setPhase = usePaymentStore(s => s.setPhase);
   const setError = usePaymentStore(s => s.setError);
@@ -45,6 +47,12 @@ export function PaymentCardScreen({route}: Props): React.JSX.Element {
       if (__DEV__) {
         console.log(`[VivaFlow] Linking.canOpenURL=${String(can)}`);
       }
+      if (!can) {
+        setPhase('failed');
+        setError(translate('kiosk.paymentCard.vivaUnavailable'));
+        navigateToCardFailed(navigation);
+        return;
+      }
       setPhase('awaiting_app');
       await Linking.openURL(uri);
       if (__DEV__) {
@@ -58,6 +66,7 @@ export function PaymentCardScreen({route}: Props): React.JSX.Element {
       }
       setPhase('failed');
       setError(String(e));
+      navigateToCardFailed(navigation);
     }
   };
 

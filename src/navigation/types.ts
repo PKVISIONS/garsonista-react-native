@@ -13,7 +13,16 @@ export type RootStackParamList = {
     fiscalisationData?: string;
   };
   PaymentBank: undefined;
-  TransactionReceipt: {paymentMethod?: 'cash' | 'card'} | undefined;
+  TransactionReceipt:
+    | {
+        paymentMethod?: 'cash' | 'card';
+        /** Set when receipt was already printed (e.g. cash at payment screen). */
+        orderNumber?: number;
+        receiptPrinted?: boolean;
+        /** Bumps when retrying card/cash after failure so submit runs again. */
+        attemptId?: number;
+      }
+    | undefined;
   OrderComplete: undefined;
   CardFailed: undefined;
   TaxCustomer: undefined;

@@ -6,6 +6,26 @@ import {warmRemoteImageCache} from './productImage';
 
 type ServiceType = 'dine-in' | 'takeaway';
 
+/** Never block kiosk boot longer than this while prefetching menu images. */
+const WARM_MENU_TIMEOUT_MS = 30_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${ms}ms`));
+    }, ms);
+    promise
+      .then(value => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch(error => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+}
+
 /** Build menu navigation state (table ids, category ids) from catalog data. */
 export function indexMenuFromCatalog(
   catalog: CatalogBootstrap,
@@ -43,11 +63,26 @@ export async function warmMenuExperience(
   catalog: CatalogBootstrap,
   wireRow: Record<string, unknown> | null,
 ): Promise<void> {
-  indexMenuFromCatalog(catalog, wireRow);
-  await catalogRepository.warmMenuImages(catalog, wireRow);
-  prefetchMenuProductImages();
-  useMenuPreloadStore.getState().markPrerenderComplete();
-  if (__DEV__) {
-    console.log('[MenuPreload] warmMenuExperience complete');
+  try {
+    indexMenuFromCatalog(catalog, wireRow);
+    await withTimeout(
+      catalogRepository.warmMenuImages(catalog, wireRow),
+      WARM_MENU_TIMEOUT_MS,
+      'warmMenuImages',
+    );
+    prefetchMenuProductImages();
+    if (__DEV__) {
+      console.log('[MenuPreload] warmMenuExperience complete');
+    }
+  } catch (error) {
+    if (__DEV__) {
+      console.warn(
+        '[MenuPreload] warmMenuExperience failed — continuing without full image cache',
+        error,
+      );
+    }
+  } finally {
+    // Always clear boot overlay; a failed prefetch must not block the kiosk UI.
+    useMenuPreloadStore.getState().markPrerenderComplete();
   }
 }
