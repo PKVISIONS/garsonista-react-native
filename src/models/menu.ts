@@ -41,4 +41,7 @@ export interface OptionValue {
   imageUrl?: string | null;
   /** `activate_idproduct_option` — show this option group only when this value is selected. */
   activatesGroupId?: number | null;
+  groupName?: string | null;
+  forGrouping?: number | string | null;
+  flatPrice?: number | string | null;
 }

@@ -74,7 +74,10 @@ export function buildSelectedOptions(
           groupId: g.id,
           valueId: v.id,
           label: pickLabel(lang, v.name, v.nameEn),
+          groupLabel: v.groupName ?? pickLabel(lang, g.name, g.nameEn),
           priceDelta: v.priceDelta,
+          forGrouping: v.forGrouping,
+          flatPrice: v.flatPrice,
         });
       }
     }

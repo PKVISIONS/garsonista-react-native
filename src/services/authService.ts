@@ -8,6 +8,8 @@ import {setApiCredentials} from './http/client';
 import {resetRuntimeConfig, setRuntimeConfigFromWireRow} from '@constants/runtimeConfig';
 import {API_BASE_URL, API_BASE_URL_ALT} from '@constants/config';
 
+const AUTH_SERVICE_PATH = 'service_go_v166/';
+
 export type LoginResult = {
   session: ReturnType<typeof mapLoginResponse>;
   wireRow: Record<string, unknown>;
@@ -64,14 +66,14 @@ function shouldTryAlternateLoginHost(err: unknown): boolean {
 }
 
 /**
- * Login uses `service_go_v150/` + `select=login`. Tries primary host, then alternate on transport failure.
+ * Login uses `service_go_v166/` + `select=login`. Tries primary host, then alternate on transport failure.
  */
 export async function login(email: string, password: string): Promise<LoginResult> {
   setApiCredentials({user: email, password});
   const form = buildLoginForm(email, password);
 
-  const primaryAuth = `${API_BASE_URL}service_go_v150/`;
-  const altAuth = `${API_BASE_URL_ALT}service_go_v150/`;
+  const primaryAuth = `${API_BASE_URL}${AUTH_SERVICE_PATH}`;
+  const altAuth = `${API_BASE_URL_ALT}${AUTH_SERVICE_PATH}`;
 
   let text: string;
   try {
@@ -101,6 +103,15 @@ export async function login(email: string, password: string): Promise<LoginResul
 
   const session = mapLoginResponse(text);
   const wireRow = extractLoginWireRow(text);
+  if (__DEV__) {
+    console.log(
+      `[Auth] login table fields dineinbtn_table=${String(
+        wireRow.dineinbtn_table ?? 'none',
+      )} takeawaybtn_table=${String(
+        wireRow.takeawaybtn_table ?? 'none',
+      )} keys=${Object.keys(wireRow).slice(0, 80).join(',')}`,
+    );
+  }
   wireRow.user_login = email;
   wireRow.password_login = password;
   setRuntimeConfigFromWireRow(wireRow);

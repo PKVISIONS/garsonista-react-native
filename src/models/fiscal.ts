@@ -8,4 +8,7 @@ export interface FiscalDocument {
   total: number;
   aadeTransactionId: string;
   invoiceUrl: string;
+  escpos?: string | null;
+  fiscalData?: string | null;
+  signatureData?: string | null;
 }

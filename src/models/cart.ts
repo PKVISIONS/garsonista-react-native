@@ -4,7 +4,10 @@ export interface SelectedOption {
   groupId: number;
   valueId: number;
   label: string;
+  groupLabel?: string | null;
   priceDelta: number;
+  forGrouping?: number | string | null;
+  flatPrice?: number | string | null;
 }
 
 export interface CartItem {

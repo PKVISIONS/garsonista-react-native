@@ -6,6 +6,13 @@ function num(v: unknown, fallback = 0): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function legacyScalar(v: unknown): string | number | null {
+  if (typeof v === 'string' || typeof v === 'number') {
+    return v;
+  }
+  return null;
+}
+
 /** First usable image field from legacy row (SQL column names vary). */
 function pickImageUrl(o: Record<string, unknown>, keys: string[]): string | null {
   for (const k of keys) {
@@ -271,6 +278,9 @@ export function mapOptionGroups(raw: unknown): OptionGroup[] {
           values: nested.map((v: unknown) => {
             const ov = v as Record<string, unknown>;
             const activates = num(ov.activate_idproduct_option, 0);
+            const groupName = String(
+              ov.descr_option ?? o.option_descr ?? o.group_descr ?? o.descr ?? '',
+            );
             return {
               id: num(ov.idoption_value ?? ov.id),
               groupId,
@@ -282,6 +292,9 @@ export function mapOptionGroups(raw: unknown): OptionGroup[] {
               priceDelta: optionValuePrice(ov),
               imageUrl: pickProductImageUrl(ov),
               activatesGroupId: activates > 0 ? activates : null,
+              groupName: groupName.trim() ? groupName : null,
+              forGrouping: legacyScalar(ov.forgrouping),
+              flatPrice: legacyScalar(ov.flat_price),
             };
           }),
         };
@@ -323,6 +336,9 @@ export function mapOptionGroups(raw: unknown): OptionGroup[] {
         priceDelta: optionValuePrice(o),
         imageUrl: pickProductImageUrl(o),
         activatesGroupId: activates > 0 ? activates : null,
+        groupName: String(o.descr_option ?? o.group_descr ?? o.option_descr ?? '').trim() || null,
+        forGrouping: legacyScalar(o.forgrouping),
+        flatPrice: legacyScalar(o.flat_price),
       };
       g.values.push(val);
     }

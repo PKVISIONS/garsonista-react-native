@@ -22,6 +22,7 @@ export interface OrderLine {
 
 export interface Order {
   id: number;
+  orderNumber?: string | null;
   clientId: string;
   tableId: number;
   type: OrderType;

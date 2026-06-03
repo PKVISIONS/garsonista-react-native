@@ -74,15 +74,19 @@ type PaymentNavigation = Pick<
 
 export function retryCardPayment(navigation: PaymentNavigation): void {
   const cart = useFailedCardPaymentStore.getState().restoreCart();
+  const orderNumber = useFailedCardPaymentStore.getState().orderNumber;
   if (!cart) {
     navigation.navigate(ROUTES.PaymentMethod);
     return;
   }
-  usePaymentStore.getState().reset();
-  const ticket = nextTicketNumber();
+  if (orderNumber == null) {
+    navigation.navigate(ROUTES.PaymentMethod);
+    return;
+  }
+  usePaymentStore.getState().setPendingOrderNumber(orderNumber);
   navigation.navigate(ROUTES.TransactionReceipt, {
     paymentMethod: 'card',
-    orderNumber: ticket,
+    orderNumber,
     attemptId: Date.now(),
   });
 }

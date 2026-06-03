@@ -30,11 +30,13 @@ export async function submitCartOnline(
       ? 'signature'
       : 'receipt';
   const isCashOnly = paymentMethod === 'cash';
-  const novusUser = isCashOnly
-    ? 0
-    : Number(ctx.auto_receipt) === 1 && Number(ctx.novus_user) === 1
-      ? 1
-      : 0;
+  const novusUser = paymentMethod === 'card'
+    ? 1
+    : isCashOnly
+      ? 0
+      : Number(ctx.auto_receipt) === 1 && Number(ctx.novus_user) === 1
+        ? 1
+        : 0;
   const form = new FormData();
   form.append('ajax', 'true');
   form.append('select', 'insert_orders');
@@ -61,7 +63,7 @@ export async function submitCartOnline(
   if (__DEV__) {
     const first = wire[0] as Record<string, unknown> | undefined;
     console.log(
-      `[VivaFlow] insert_orders req paymentMethod=${paymentMethod} action=${action} prebank_val=${prebankVal.toFixed(
+      `[VivaFlow] insert_orders req paymentMethod=${paymentMethod} action=${action} tableid=${ctx.tableId} prebank_val=${prebankVal.toFixed(
         2,
       )} iscredit=${isCredit} hasTidNsp=${hasTidNsp} novus_user=${novusUser} auto_receipt=${ctx.auto_receipt} ctx.novus_user=${ctx.novus_user}`,
     );

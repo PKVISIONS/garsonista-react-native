@@ -122,6 +122,17 @@ class SunmiPrinterModule(private val reactContext: ReactApplicationContext) :
   }
 
   @ReactMethod
+  fun setAlignment(alignment: Int, promise: Promise) {
+    val service = ensureConnected(promise) ?: return
+    try {
+      service.setAlignment(alignment, null)
+      promise.resolve(true)
+    } catch (e: Exception) {
+      promise.reject("SUNMI_ALIGNMENT_EXCEPTION", e.message, e)
+    }
+  }
+
+  @ReactMethod
   fun printText(text: String, promise: Promise) {
     val service = ensureConnected(promise) ?: return
     try {
@@ -150,6 +161,36 @@ class SunmiPrinterModule(private val reactContext: ReactApplicationContext) :
       promise.resolve(true)
     } catch (e: Exception) {
       promise.reject("SUNMI_PRINT_BITMAP_EXCEPTION", e.message, e)
+    }
+  }
+
+  @ReactMethod
+  fun printQRCode(data: String, moduleSize: Int, errorLevel: Int, promise: Promise) {
+    val service = ensureConnected(promise) ?: return
+    try {
+      service.printQRCode(data, moduleSize, errorLevel, object : InnerResultCallback() {
+        override fun onRunResult(isSuccess: Boolean) {
+          if (isSuccess) promise.resolve(true) else promise.reject("SUNMI_PRINT_QR_FAILED", "printQRCode returned false")
+        }
+
+        override fun onReturnString(result: String?) {
+          promise.resolve(result ?: true)
+        }
+
+        override fun onRaiseException(code: Int, msg: String?) {
+          promise.reject("SUNMI_PRINT_QR_ERROR_$code", msg)
+        }
+
+        override fun onPrintResult(code: Int, msg: String?) {
+          if (code == 0) {
+            promise.resolve(true)
+          } else {
+            promise.reject("SUNMI_PRINT_QR_ERROR_$code", msg)
+          }
+        }
+      })
+    } catch (e: Exception) {
+      promise.reject("SUNMI_PRINT_QR_EXCEPTION", e.message, e)
     }
   }
 

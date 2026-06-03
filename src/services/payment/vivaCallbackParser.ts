@@ -17,7 +17,7 @@ export function parseVivaCallbackUrl(url: string): VivaCallbackFields {
   const normalizedStatus =
     rawStatus === 'ok' ? 'success' : rawStatus === 'fail' ? 'failed' : rawStatus;
 
-  return {
+  const fields = {
     status: normalizedStatus || null,
     message: get('message'),
     action: get('action'),
@@ -30,8 +30,25 @@ export function parseVivaCallbackUrl(url: string): VivaCallbackFields {
     accountNumber: get('accountNumber'),
     aadeTransactionId: get('aadeTransactionId'),
     paymentMethod: get('paymentMethod'),
-    transactionDate: get('transactionDate'),
+  transactionDate: get('transactionDate'),
+  fiscalisationSigningDetails: get('fiscalisationSigningDetails'),
   };
+
+  if (__DEV__) {
+    console.log(`[VivaFlow] Raw Viva callback url len=${url.length}`);
+    console.log(`[VivaFlow] Raw Viva callback url preview=${url.slice(0, 240)}`);
+    const summary = Object.entries(fields)
+      .map(([key, value]) => `${key}=${value ?? 'null'}`)
+      .join(' ');
+    console.log(`[VivaFlow] Parsed Viva callback fields ${summary}`);
+    if (fields.fiscalisationSigningDetails) {
+      console.log(
+        `[VivaFlow] Parsed Viva callback fiscalisationSigningDetails=${fields.fiscalisationSigningDetails.slice(0, 200)}`,
+      );
+    }
+  }
+
+  return fields;
 }
 
 export function vivaFieldsToTransaction(

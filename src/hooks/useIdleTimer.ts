@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useRef} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {AppState, PanResponder, type AppStateStatus} from 'react-native';
 
 /**
@@ -10,6 +10,7 @@ export function useIdleTimer(
   onIdle: () => void,
   enabled: boolean,
 ): {
+  remainingMs: number;
   panHandlers: ReturnType<typeof PanResponder.create>['panHandlers'];
   rootTouchProps: {onTouchStart: () => void};
   resetIdle: () => void;
@@ -17,6 +18,7 @@ export function useIdleTimer(
   const deadline = useRef(Date.now() + timeoutMs);
   const appState = useRef<AppStateStatus>(AppState.currentState);
   const onIdleRef = useRef(onIdle);
+  const [remainingMs, setRemainingMs] = useState(timeoutMs);
   const resetIdleRef = useRef<() => void>(() => {});
   onIdleRef.current = onIdle;
 
@@ -25,6 +27,7 @@ export function useIdleTimer(
       return;
     }
     deadline.current = Date.now() + timeoutMs;
+    setRemainingMs(timeoutMs);
   }, [enabled, timeoutMs]);
 
   resetIdleRef.current = resetIdle;
@@ -37,12 +40,16 @@ export function useIdleTimer(
 
   useEffect(() => {
     if (!enabled) {
+      setRemainingMs(timeoutMs);
       return;
     }
     const id = setInterval(() => {
+      const remaining = deadline.current - Date.now();
+      setRemainingMs(remaining > 0 ? remaining : 0);
       if (Date.now() > deadline.current) {
         onIdleRef.current();
         deadline.current = Date.now() + timeoutMs;
+        setRemainingMs(timeoutMs);
       }
     }, 250);
     return () => clearInterval(id);
@@ -76,5 +83,5 @@ export function useIdleTimer(
     onTouchStart: () => resetIdleRef.current(),
   };
 
-  return {panHandlers: panResponder.panHandlers, rootTouchProps, resetIdle};
+  return {remainingMs, panHandlers: panResponder.panHandlers, rootTouchProps, resetIdle};
 }

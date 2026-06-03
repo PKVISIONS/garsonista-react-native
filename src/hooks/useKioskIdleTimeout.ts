@@ -26,9 +26,10 @@ export function useKioskIdleTimeout(
   navigationReady: boolean,
 ): {
   resetIdle: () => void;
+  remainingMs: number;
   rootTouchProps: RootTouchProps;
   panHandlers: ReturnType<typeof useIdleTimer>['panHandlers'];
-  /** True when the 10s countdown is running (not on home / first screen). */
+  /** True when the 20s countdown is running (not on home / first screen). */
   timerActive: boolean;
 } {
   const clearCart = useCartStore(s => s.clear);
@@ -74,7 +75,7 @@ export function useKioskIdleTimeout(
     );
   }, [clearCart, navigationRef, syncActiveRoute, timerActive]);
 
-  const {panHandlers, rootTouchProps, resetIdle} = useIdleTimer(
+  const {panHandlers, rootTouchProps, resetIdle, remainingMs} = useIdleTimer(
     KIOSK_IDLE_TIMEOUT_MS,
     onIdle,
     timerActive,
@@ -102,6 +103,7 @@ export function useKioskIdleTimeout(
     resetIdle,
     panHandlers,
     rootTouchProps,
+    remainingMs,
     timerActive,
   };
 }

@@ -5,14 +5,21 @@ import {KioskTouchableOpacity as TouchableOpacity} from '../KioskTouchableOpacit
 import type {RootStackParamList} from '@navigation/types';
 import {buildVivaPaymentUri} from '@services/payment/vivaDeepLink';
 import {navigateToCardFailed} from '@services/payment/vivaFlow';
-import {usePaymentStore} from '@store';
+import {useAuthStore, usePaymentStore} from '@store';
 import {theme, titleSection} from '@theme/kiosk';
 import {translate} from '../../stores/Localization/LocalizationStore';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PaymentCard'>;
 
 export function PaymentCardScreen({route, navigation}: Props): React.JSX.Element {
-  const {amountEuros, fiscalisationData, clientTransactionId} = route.params;
+  const {amountEuros, fiscalisationData, clientTransactionId, orderNumber} = route.params;
+  const txId = String(orderNumber ?? clientTransactionId);
+  const wireRow = useAuthStore(s => s.wireRow);
+  const paroxosCustomersId = Number(wireRow?.paroxos_customers_id ?? 0);
+  const accountType =
+    paroxosCustomersId === 50
+      ? 'demo'
+      : String(wireRow?.account_type ?? wireRow?.accountType ?? wireRow?.type_account ?? '');
   const setPhase = usePaymentStore(s => s.setPhase);
   const setError = usePaymentStore(s => s.setError);
   const launchedRef = useRef(false);
@@ -20,7 +27,7 @@ export function PaymentCardScreen({route, navigation}: Props): React.JSX.Element
   const launch = async () => {
     if (__DEV__) {
       console.log(
-        `[VivaFlow] PaymentCard launch start amount=${amountEuros.toFixed(2)} txId=${clientTransactionId} hasFiscal=${Boolean(
+        `[VivaFlow] PaymentCard launch start amount=${amountEuros.toFixed(2)} txId=${txId} hasFiscal=${Boolean(
           fiscalisationData?.trim(),
         )} fiscalLen=${fiscalisationData?.length ?? 0}`,
       );
@@ -33,9 +40,10 @@ export function PaymentCardScreen({route, navigation}: Props): React.JSX.Element
       }
     }
     const uri = buildVivaPaymentUri({
-      clientTransactionId,
+      clientTransactionId: txId,
       amountEuros,
       fiscalisationData,
+      accountType,
     });
     try {
       if (__DEV__) {
@@ -73,7 +81,7 @@ export function PaymentCardScreen({route, navigation}: Props): React.JSX.Element
   useEffect(() => {
     if (__DEV__) {
       console.log(
-        `[VivaFlow] PaymentCard mounted amount=${amountEuros.toFixed(2)} txId=${clientTransactionId} hasFiscal=${Boolean(
+        `[VivaFlow] PaymentCard mounted amount=${amountEuros.toFixed(2)} txId=${txId} hasFiscal=${Boolean(
           fiscalisationData?.trim(),
         )}`,
       );

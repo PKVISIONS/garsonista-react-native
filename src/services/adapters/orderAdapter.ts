@@ -48,6 +48,17 @@ export function buildWireOrdersFromCart(
     idx += 1;
     const ISODate = new Date().toISOString();
     const clientUNID = `${ISODate}-${idx}-${ctx.slogtok}-${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
+    const mods = item.selectedOptions.map(o => ({
+      idoption_value: o.valueId,
+      idoption: o.groupId,
+      acost: o.priceDelta,
+      descr_value: o.label,
+      descr_option: o.groupLabel ?? '',
+      forgrouping: o.forGrouping ?? '',
+      flat_price: o.flatPrice ?? '',
+      name: o.label,
+      text: o.label,
+    }));
     return {
       headid: 0,
       itemid: 0,
@@ -59,11 +70,14 @@ export function buildWireOrdersFromCart(
       aqty: item.quantity,
       val: item.lineTotal,
       aval: item.unitPrice,
-      mods: item.selectedOptions.map(o => ({
-        groupId: o.groupId,
-        valueId: o.valueId,
-        label: o.label,
-      })),
+      // smods duplicates modifier labels as text; keep it disabled unless the backend requires it.
+      // smods: item.selectedOptions.map(o => o.label).join(', '),
+      // smods_real: item.selectedOptions.map(o => o.label).join(', '),
+      // comments duplicates modifier labels as text; keep it disabled unless the backend requires it.
+      // comments: item.selectedOptions.map(o => o.label).join(', '),
+      mods,
+      // modifiers duplicates `mods` as a simplified array; keep it disabled unless the backend requires it.
+      // modifiers: mods.map(mod => ({name: mod.name, text: mod.text})),
       ISODate,
       aver: 1,
       isupd: 0,
@@ -129,13 +143,96 @@ function mapLine(item: CartItem): OrderLine {
   };
 }
 
+function firstResponseString(
+  rows: Record<string, unknown>[],
+  read: (row: Record<string, unknown>) => unknown,
+): {value: string; rowIndex: number} {
+  for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
+    const raw = read(rows[rowIndex]);
+    if (raw == null) {
+      continue;
+    }
+    const value = typeof raw === 'string' ? raw : String(raw);
+    if (value.trim()) {
+      return {value, rowIndex};
+    }
+  }
+  return {value: '', rowIndex: -1};
+}
+
+function signatureDataFrom(row: Record<string, unknown>): string {
+  if (typeof row.signature_data === 'string') {
+    return row.signature_data;
+  }
+  if (row.signature_data && typeof row.signature_data === 'object') {
+    return JSON.stringify(row.signature_data);
+  }
+  return '';
+}
+
 export function mapInsertOrdersResponse(raw: unknown, cart: Cart): Order {
   const arr = parseJsonArray(raw);
-  const first = (arr[0] ?? {}) as Record<string, unknown>;
+  const rows = arr.map(row => (row ?? {}) as Record<string, unknown>);
+  const first = rows[0] ?? {};
   const headid = Number(first.headid ?? 0);
-  const invoiceUrl = String(first.invoice_url ?? first.invoiceUrl ?? '');
+  const invoiceUrlResult = firstResponseString(
+    rows,
+    row => row.invoice_url ?? row.invoiceUrl,
+  );
+  const escposResult = firstResponseString(rows, row => row.escpos);
+  const fiscalDataResult = firstResponseString(
+    rows,
+    row =>
+      row.fiscal_data ??
+      row.fiscalData ??
+      row.fiscalisationData ??
+      row.fiscalisationSigningDetails,
+  );
+  const signatureDataResult = firstResponseString(rows, signatureDataFrom);
+  const receiptNumberResult = firstResponseString(
+    rows,
+    row => row.orderaa ?? row.ordaa ?? row.headid,
+  );
+  const aadeTransactionIdResult = firstResponseString(
+    rows,
+    row => row.aadeTransactionId ?? row.aade_transaction_id,
+  );
+  const invoiceUrl = invoiceUrlResult.value;
+  const escpos = escposResult.value;
+  const fiscalData = fiscalDataResult.value;
+  const signatureData = signatureDataResult.value;
+  const receiptNumber = receiptNumberResult.value || String(headid ?? '');
+  const aadeTransactionId = aadeTransactionIdResult.value;
+  const hasFiscalDoc = Boolean(
+    invoiceUrl.trim() || escpos.trim() || fiscalData.trim() || signatureData.trim(),
+  );
+  if (__DEV__) {
+    const signatureRow =
+      signatureDataResult.rowIndex >= 0 ? rows[signatureDataResult.rowIndex] : first;
+    const signatureObj =
+      signatureRow.signature_data && typeof signatureRow.signature_data === 'object'
+        ? (signatureRow.signature_data as Record<string, unknown>)
+        : null;
+    console.log(
+      `[VivaFlow] mapInsertOrdersResponse rows=${rows.length} headid=${headid} invoiceUrlLen=${invoiceUrl.length} invoiceRow=${invoiceUrlResult.rowIndex} escposLen=${escpos.length} escposRow=${escposResult.rowIndex} fiscalDataLen=${fiscalData.length} fiscalRow=${fiscalDataResult.rowIndex} signatureDataLen=${signatureData.length} signatureRow=${signatureDataResult.rowIndex} hasSignatureObj=${String(
+        Boolean(signatureObj),
+      )}`,
+    );
+    if (signatureObj) {
+      console.log(
+        `[VivaFlow] mapInsertOrdersResponse signature keys=${Object.keys(signatureObj).join(',')}`,
+      );
+      console.log(
+        `[VivaFlow] mapInsertOrdersResponse signature preview=${JSON.stringify(signatureObj).slice(
+          0,
+          500,
+        )}`,
+      );
+    }
+  }
   return {
     id: headid,
+    orderNumber: receiptNumber || null,
     clientId: cart.id,
     tableId: cart.tableId,
     type: cart.type,
@@ -143,17 +240,20 @@ export function mapInsertOrdersResponse(raw: unknown, cart: Cart): Order {
     items: cart.items.map(mapLine),
     payment: emptyPayment(),
     customer: cart.customer,
-    fiscalDoc: invoiceUrl
+    fiscalDoc: hasFiscalDoc
       ? {
           id: headid,
           type: 'viva',
-          receiptNumber: String(first.orderaa ?? first.ordaa ?? headid ?? ''),
+          receiptNumber,
           issuedAt: new Date().toISOString(),
           subtotal: cart.items.reduce((sum, item) => sum + item.lineTotal, 0),
           taxAmount: 0,
           total: cart.items.reduce((sum, item) => sum + item.lineTotal, 0),
-          aadeTransactionId: String(first.aadeTransactionId ?? ''),
+          aadeTransactionId,
           invoiceUrl,
+          escpos: escpos || null,
+          fiscalData: fiscalData || null,
+          signatureData: signatureData || null,
         }
       : null,
     createdAt: new Date().toISOString(),

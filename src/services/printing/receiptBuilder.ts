@@ -1,5 +1,6 @@
 import type {Cart, CartItem, SelectedOption} from '@models';
 import type {AuthSession} from '@models/auth';
+import {resolveBestVivaQrCodeUrl} from '@utils/fiscalisationFromInvoice';
 
 export type ReceiptLine =
   | {kind: 'text'; value: string; align?: 'left' | 'center' | 'right'; bold?: boolean; size?: 'normal' | 'large' | 'xlarge'}
@@ -24,10 +25,12 @@ export type FinalReceiptPayload = {
   preview: ReceiptPreview;
   escpos: Uint8Array;
   plainText: string;
+  postQrText: string;
+  useRawPrinter: boolean;
 };
 
 export type ReceiptContext = {
-  orderNumber?: number | null;
+  orderNumber?: number | string | null;
   createdAt?: Date;
   companyName?: string | null;
   branchName?: string | null;
@@ -41,6 +44,18 @@ export type ReceiptContext = {
   paymentMethod?: 'cash' | 'card';
   taxId?: string | null;
   taxOffice?: string | null;
+  vivaReceiptDetails?: {
+    invoiceUid?: string | null;
+    invoiceMark?: string | null;
+    authenticationCode?: string | null;
+    fiskaltrustQr?: string | null;
+    qrCodeUrl?: string | null;
+    vivaQr?: string | null;
+    transactionId?: string | null;
+    cardType?: string | null;
+    accountNumber?: string | null;
+    fiscalisationSigningDetails?: string | null;
+  };
 };
 
 const RECEIPT_WIDTH = 32;
@@ -65,6 +80,21 @@ function formatMoney(amount: number): string {
   return `${amount.toFixed(2).replace('.', ',')}€`;
 }
 
+function escPosQrCommand(data: string): Uint8Array {
+  const payload = encodeUtf8(data);
+  const size = payload.length + 3;
+  const pL = size & 0xff;
+  const pH = (size >> 8) & 0xff;
+  const bytes: number[] = [];
+  bytes.push(0x1d, 0x28, 0x6b, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00);
+  bytes.push(0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x43, 0x06);
+  bytes.push(0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x45, 0x30);
+  bytes.push(0x1d, 0x28, 0x6b, pL, pH, 0x31, 0x50, 0x30);
+  bytes.push(...payload);
+  bytes.push(0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x51, 0x30);
+  return new Uint8Array(bytes);
+}
+
 function formatDateTime(date: Date): string {
   return `${date.toLocaleDateString('el-GR')} ${date.toLocaleTimeString('el-GR', {
     hour: '2-digit',
@@ -86,14 +116,6 @@ function formatReceiptDateTime(date: Date): string {
     hour12: false,
   });
   return `${day} – ${time}`;
-}
-
-function padBoth(text: string, width: number): string {
-  if (text.length >= width) return text;
-  const total = width - text.length;
-  const left = Math.floor(total / 2);
-  const right = total - left;
-  return `${' '.repeat(left)}${text}${' '.repeat(right)}`;
 }
 
 function padLine(left: string, right: string, width: number): string {
@@ -182,7 +204,16 @@ function buildCashPlainText(preview: ReceiptPreview, ctx: ReceiptContext): strin
   const orderNumber = preview.metadata.find(m => m.label === 'Παραγγελία')?.value ?? '';
   const date = formatReceiptDateTime(ctx.createdAt ?? new Date());
 
-  lines.push(encodeLine('C', false, 'n', 'Απόδειξη μετρητών (πελάτης)'));
+  lines.push(
+    encodeLine(
+      'C',
+      false,
+      'n',
+      ctx.paymentMethod === 'cash'
+        ? 'Απόδειξη μετρητών (πελάτης)'
+        : 'Απόδειξη πληρωμής (πελάτη)',
+    ),
+  );
   lines.push(encodeLine('C', false, 'n', displayName));
   if (
     tradeName &&
@@ -251,77 +282,200 @@ function buildCashPlainText(preview: ReceiptPreview, ctx: ReceiptContext): strin
     lines.push(encodeLine('L', bold, size, total.label, total.value));
   }
 
-  lines.push('');
-  lines.push(encodeLine('C', true, 'x', 'ΠΛΗΡΩΣΤΕ ΣΤΟ ΤΑΜΕΙΟ'));
-  lines.push(encodeLine('C', true, 'x', 'ΜΕ ΜΕΤΡΗΤΑ'));
-  lines.push('');
-  lines.push('');
-  return lines.join('\n');
-}
-
-function pushLine(lines: string[], value: string) {
-  lines.push(value);
-}
-
-/** Legacy cash order slip (`generateCashOrderSlip` in garsonista-kiosk). */
-function buildLegacyPlainText(preview: ReceiptPreview): string {
-  const lines: string[] = [];
-  const company = preview.title || 'Garsonista';
-  pushLine(lines, padBoth(company, RECEIPT_WIDTH));
-
-  const branch = preview.metadata.find(m => m.label === 'Κατάστημα')?.value ?? '';
-  if (branch) pushLine(lines, padBoth(branch, RECEIPT_WIDTH));
-
-  pushLine(lines, padBoth('ΠΑΡΑΓΓΕΛΙΑ', RECEIPT_WIDTH));
-  pushLine(lines, padBoth('ΠΑΡΑΚΑΛΩ ΠΛΗΡΩΣΤΕ ΣΤΟ ΤΑΜΕΙΟ', RECEIPT_WIDTH));
-
-  const service = preview.metadata.find(m => m.label === 'Τύπος')?.value ?? '';
-  if (service) pushLine(lines, padBoth(service.toUpperCase(), RECEIPT_WIDTH));
-
-  pushLine(lines, ruleLine());
-
-  const orderNumber = preview.metadata.find(m => m.label === 'Παραγγελία')?.value ?? '';
-  if (orderNumber) {
-    pushLine(lines, '');
-    pushLine(lines, padBoth(orderNumber, RECEIPT_WIDTH));
-    pushLine(lines, '');
-  }
-
-  pushLine(lines, ruleLine());
-
-  const date = preview.metadata.find(m => m.label === 'Ημερομηνία')?.value ?? '';
-  if (date) pushLine(lines, padBoth(date, RECEIPT_WIDTH));
-  pushLine(lines, '');
-
-  for (const item of preview.items) {
-    const qtyLine = `${item.quantity} x ${item.name}`;
-    const wrapped = qtyLine.length > RECEIPT_WIDTH ? qtyLine.slice(0, RECEIPT_WIDTH) : qtyLine;
-    pushLine(lines, padLine(wrapped, item.lineTotal, RECEIPT_WIDTH));
-    for (const opt of item.options) {
-      pushLine(lines, opt);
+  if (ctx.vivaReceiptDetails) {
+    const viva = ctx.vivaReceiptDetails;
+    const qrCode = resolveBestVivaQrCodeUrl(viva);
+    const transactionId = viva.transactionId?.trim() ?? '';
+    const cardType = viva.cardType?.trim() ?? '';
+    const accountNumber = viva.accountNumber?.trim() ?? '';
+    const hasFiscalBlock = Boolean(
+      qrCode ||
+        viva.invoiceUid ||
+        viva.invoiceMark ||
+        viva.authenticationCode,
+    );
+    if (hasFiscalBlock) {
+      lines.push('');
     }
-    pushLine(lines, '');
+    if (viva.invoiceUid) {
+      lines.push(encodeLine('L', false, 'n', `UID: ${viva.invoiceUid}`));
+    }
+    if (viva.invoiceMark) {
+      lines.push(encodeLine('L', false, 'n', `ΜΑΡΚ: ${viva.invoiceMark}`));
+    }
+    if (viva.authenticationCode) {
+      lines.push(encodeLine('L', false, 'n', `AUTH: ${viva.authenticationCode}`));
+    }
+    if (viva.qrCodeUrl && viva.qrCodeUrl !== qrCode) {
+      lines.push(encodeLine('L', false, 'n', `QR URL: ${viva.qrCodeUrl}`));
+    }
+    if (viva.vivaQr && viva.vivaQr !== qrCode) {
+      lines.push(encodeLine('L', false, 'n', `VIVA QR: ${viva.vivaQr}`));
+    }
+    if (transactionId || cardType || accountNumber) {
+      lines.push(encodeLine('C', false, 'n', ruleLine()));
+      lines.push(encodeLine('L', false, 'n', 'ΣΥΝΑΛΛΑΓΗ POS'));
+      lines.push(encodeLine('L', false, 'n', 'ΜΕΣΩ ΠΛΗΡΩΜΩΝ: VIVA'));
+      if (transactionId) {
+        lines.push(encodeLine('L', false, 'n', `ΚΩΔ.ΣΥΝΑΛΛΑΓΗΣ: ${transactionId}`));
+      }
+      if (accountNumber) {
+        lines.push(encodeLine('L', false, 'n', `ΑΡΙΘΜΟΣ ΚΑΡΤΑΣ: ${accountNumber}`));
+      }
+      if (cardType) {
+        lines.push(encodeLine('L', false, 'n', `ΕΚΔΟΤΗΣ: ${cardType}`));
+      }
+    }
   }
 
-  const total = preview.totals[preview.totals.length - 1];
-  if (total) {
-    pushLine(lines, padBoth(`${total.label}: ${total.value}`, RECEIPT_WIDTH));
+  if (ctx.paymentMethod === 'cash') {
+    lines.push('');
+    lines.push(encodeLine('C', true, 'x', 'ΠΛΗΡΩΣΤΕ ΣΤΟ ΤΑΜΕΙΟ'));
+    lines.push(encodeLine('C', true, 'x', 'ΜΕ ΜΕΤΡΗΤΑ'));
+    lines.push('');
+    lines.push('');
   }
-  pushLine(lines, '');
-  for (const footerLine of preview.footer) {
-    pushLine(lines, padBoth(footerLine, RECEIPT_WIDTH));
-  }
-  pushLine(lines, '');
-  pushLine(lines, '');
   return lines.join('\n');
 }
+
+function buildCardPostQrText(): string {
+  const lines: string[] = [];
+  lines.push(encodeLine('C', true, 'x', 'ΤΡΟΠΟΣ ΠΛΗΡΩΜΗΣ: ΚΑΡΤΑ'));
+  lines.push(encodeLine('C', true, 'x', 'ΣΑΣ ΕΥΧΑΡΙΣΤΟΥΜΕ!'));
+  lines.push('');
+  lines.push('');
+  return lines.join('\n');
+}
+
+const WINDOWS_1253_BYTES: Record<string, number> = {
+  '€': 0x80,
+  '‚': 0x82,
+  'ƒ': 0x83,
+  '„': 0x84,
+  '…': 0x85,
+  '†': 0x86,
+  '‡': 0x87,
+  '‰': 0x89,
+  '‹': 0x8b,
+  '‘': 0x91,
+  '’': 0x92,
+  '“': 0x93,
+  '”': 0x94,
+  '•': 0x95,
+  '–': 0x96,
+  '—': 0x97,
+  '™': 0x99,
+  '›': 0x9b,
+  ' ': 0xa0,
+  '£': 0xa3,
+  '§': 0xa7,
+  '¨': 0xa8,
+  '©': 0xa9,
+  '«': 0xab,
+  '¬': 0xac,
+  '­': 0xad,
+  '®': 0xae,
+  '―': 0xaf,
+  '°': 0xb0,
+  '±': 0xb1,
+  '²': 0xb2,
+  '³': 0xb3,
+  '΄': 0xb4,
+  '΅': 0xb5,
+  'Ά': 0xb6,
+  '·': 0xb7,
+  'Έ': 0xb8,
+  'Ή': 0xb9,
+  'Ί': 0xba,
+  '»': 0xbb,
+  'Ό': 0xbc,
+  '½': 0xbd,
+  'Ύ': 0xbe,
+  'Ώ': 0xbf,
+  'ΐ': 0xc0,
+  'Α': 0xc1,
+  'Β': 0xc2,
+  'Γ': 0xc3,
+  'Δ': 0xc4,
+  'Ε': 0xc5,
+  'Ζ': 0xc6,
+  'Η': 0xc7,
+  'Θ': 0xc8,
+  'Ι': 0xc9,
+  'Κ': 0xca,
+  'Λ': 0xcb,
+  'Μ': 0xcc,
+  'Ν': 0xcd,
+  'Ξ': 0xce,
+  'Ο': 0xcf,
+  'Π': 0xd0,
+  'Ρ': 0xd1,
+  'Σ': 0xd3,
+  'Τ': 0xd4,
+  'Υ': 0xd5,
+  'Φ': 0xd6,
+  'Χ': 0xd7,
+  'Ψ': 0xd8,
+  'Ω': 0xd9,
+  'Ϊ': 0xda,
+  'Ϋ': 0xdb,
+  'ά': 0xdc,
+  'έ': 0xdd,
+  'ή': 0xde,
+  'ί': 0xdf,
+  'ΰ': 0xe0,
+  'α': 0xe1,
+  'β': 0xe2,
+  'γ': 0xe3,
+  'δ': 0xe4,
+  'ε': 0xe5,
+  'ζ': 0xe6,
+  'η': 0xe7,
+  'θ': 0xe8,
+  'ι': 0xe9,
+  'κ': 0xea,
+  'λ': 0xeb,
+  'μ': 0xec,
+  'ν': 0xed,
+  'ξ': 0xee,
+  'ο': 0xef,
+  'π': 0xf0,
+  'ρ': 0xf1,
+  'ς': 0xf2,
+  'σ': 0xf3,
+  'τ': 0xf4,
+  'υ': 0xf5,
+  'φ': 0xf6,
+  'χ': 0xf7,
+  'ψ': 0xf8,
+  'ω': 0xf9,
+  'ϊ': 0xfa,
+  'ϋ': 0xfb,
+  'ό': 0xfc,
+  'ύ': 0xfd,
+  'ώ': 0xfe,
+};
 
 function encodeUtf8(text: string): Uint8Array {
   return new TextEncoder().encode(text);
 }
 
-function buildEscPos(preview: ReceiptPreview, plainText: string): Uint8Array {
+function encodeWindows1253(text: string): Uint8Array {
+  const bytes = Array.from(text, char => {
+    const code = char.charCodeAt(0);
+    if (code <= 0x7f) return code;
+    return WINDOWS_1253_BYTES[char] ?? '?'.charCodeAt(0);
+  });
+  return new Uint8Array(bytes);
+}
+
+function buildEscPos(
+  preview: ReceiptPreview,
+  plainText: string,
+  ctx: ReceiptContext,
+): Uint8Array {
   const escInit = new Uint8Array([0x1b, 0x40]);
+  const greekCodePage = new Uint8Array([0x1b, 0x74, 47]);
   const center = new Uint8Array([0x1b, 0x61, 0x01]);
   const left = new Uint8Array([0x1b, 0x61, 0x00]);
   const boldOn = new Uint8Array([0x1b, 0x45, 0x01]);
@@ -330,9 +484,10 @@ function buildEscPos(preview: ReceiptPreview, plainText: string): Uint8Array {
 
   const body: number[] = [];
   const add = (bytes: Uint8Array) => body.push(...bytes);
-  const addText = (value: string) => add(encodeUtf8(`${value}\n`));
+  const addText = (value: string) => add(encodeWindows1253(`${value}\n`));
 
   add(escInit);
+  add(greekCodePage);
   add(center);
   add(boldOn);
   addText(preview.title || 'Garsonista');
@@ -392,6 +547,30 @@ function buildEscPos(preview: ReceiptPreview, plainText: string): Uint8Array {
   }
   addText('');
   addText('');
+
+  if (ctx.vivaReceiptDetails) {
+    const viva = ctx.vivaReceiptDetails;
+    const qrCode = resolveBestVivaQrCodeUrl(viva);
+    if (qrCode) {
+      add(center);
+      add(escPosQrCommand(qrCode));
+      add(left);
+      addText('');
+    }
+    if (viva.qrCodeUrl && viva.qrCodeUrl !== qrCode) {
+      add(center);
+      add(escPosQrCommand(viva.qrCodeUrl));
+      add(left);
+      addText('');
+    }
+    if (viva.vivaQr && viva.vivaQr !== qrCode) {
+      add(center);
+      add(escPosQrCommand(viva.vivaQr));
+      add(left);
+      addText('');
+    }
+  }
+
   add(cut);
 
   const out = new Uint8Array(body.length);
@@ -406,10 +585,8 @@ export function buildFinalReceipt(
   ctx: ReceiptContext = {},
 ): FinalReceiptPayload {
   const preview = buildPreview(session, cart, ctx);
-  const plainText =
-    ctx.paymentMethod === 'cash'
-      ? buildCashPlainText(preview, ctx)
-      : buildLegacyPlainText(preview);
-  const escpos = buildEscPos(preview, plainText);
-  return {preview, plainText, escpos};
+  const plainText = buildCashPlainText(preview, ctx);
+  const postQrText = ctx.paymentMethod === 'card' ? buildCardPostQrText() : '';
+  const escpos = buildEscPos(preview, plainText, ctx);
+  return {preview, plainText, postQrText, escpos, useRawPrinter: false};
 }

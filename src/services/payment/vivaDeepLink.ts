@@ -7,6 +7,8 @@ export type VivaSaleParams = {
   tipEuros?: number;
   showReceipt?: boolean;
   fiscalisationData?: string;
+  includeIsv?: boolean;
+  accountType?: string;
   /** When AADE signing is required, pass digest/signature from fiscal step. */
   aade?: {
     providerId: string;
@@ -15,10 +17,20 @@ export type VivaSaleParams = {
   };
 };
 
-function shouldIncludeIsvParams(): boolean {
+function isDemoAccount(accountType?: string): boolean {
+  return accountType?.trim().toLowerCase() === 'demo';
+}
+
+function shouldIncludeIsvParams(override?: boolean, accountType?: string): boolean {
+  if (isDemoAccount(accountType)) {
+    return false;
+  }
+  if (typeof override === 'boolean') {
+    return override;
+  }
   const raw = mmkv.getString(STORAGE_KEYS.vivaIncludeIsv);
   if (raw == null) {
-    return false;
+    return true;
   }
   const v = raw.trim().toLowerCase();
   return !(v === '0' || v === 'false' || v === 'off' || v === 'no');
@@ -26,41 +38,34 @@ function shouldIncludeIsvParams(): boolean {
 
 /**
  * Builds `vivapayclient://pay/v1` URI (legacy `call_viva` parity).
- * ISV fee parameters are omitted — configure in native env if required.
+ * Demo accounts omit ISV fee parameters.
  */
 export function buildVivaPaymentUri(params: VivaSaleParams): string {
   const amountCents = Math.round(params.amountEuros * 100);
   const tipCents = Math.round((params.tipEuros ?? 0) * 100);
+  const isvAmountCents = Math.round(params.amountEuros * 0.001 * 100);
   const hasAade = Boolean(params.aade?.digest && params.aade?.signature);
   const hasFiscalisationData = Boolean(params.fiscalisationData?.trim());
   const baseClientId = params.clientTransactionId.trim();
-  const aadeClientId = baseClientId.startsWith('AUTX')
-    ? baseClientId
-    : `AUTX${baseClientId.replace(/^AUTB/i, '')}`;
-  const clientId = hasAade
-    ? `AUTX${params.aade?.providerId ?? ''}`
-    : hasFiscalisationData
-      ? aadeClientId
-      : baseClientId;
+  const clientId = baseClientId;
   const showReceipt = params.showReceipt ?? true;
   const hideInteractiveUi = hasAade || hasFiscalisationData;
+  const includeIsv =
+    shouldIncludeIsvParams(params.includeIsv, params.accountType) && isvAmountCents > 0;
 
   let uri =
     'vivapayclient://pay/v1' +
-    `?appId=${encodeURIComponent(VIVA_APP_ID)}` +
+    `?appId=${VIVA_APP_ID}` +
     '&action=sale' +
-    `&clientTransactionId=${encodeURIComponent(clientId)}` +
+    `&clientTransactionId=${clientId}` +
     `&amount=${amountCents}` +
     `&tipAmount=${tipCents}` +
     `&show_receipt=${hideInteractiveUi ? 'false' : showReceipt ? 'true' : 'false'}` +
     `&show_transaction_result=${hideInteractiveUi ? 'false' : showReceipt ? 'true' : 'false'}` +
     `&show_rating=${hideInteractiveUi ? 'false' : 'true'}`;
 
-  uri +=
-    '&callback=' +
-    encodeURIComponent('garsonista_offline://viva-return');
+  uri += '&callback=garsonista_offline://viva-return';
 
-  const includeIsv = shouldIncludeIsvParams();
   if (includeIsv) {
     uri +=
       `&ISV_amount=${Math.round(params.amountEuros * 0.001 * 100)}` +
@@ -69,23 +74,24 @@ export function buildVivaPaymentUri(params: VivaSaleParams): string {
       '&ISV_sourceCode=1350';
   }
 
-  if (params.fiscalisationData) {
+  if (params.fiscalisationData && !hasAade) {
     uri += `&fiscalisationData=${encodeURIComponent(params.fiscalisationData)}`;
   }
 
   if (hasAade && params.aade) {
     uri +=
       '&aadeProviderId=112' +
-      `&aadeProviderSignatureData=${encodeURIComponent(params.aade.digest)}` +
-      `&aadeProviderSignature=${encodeURIComponent(params.aade.signature)}` +
+      `&aadeProviderSignatureData=${params.aade.digest}` +
+      `&aadeProviderSignature=${params.aade.signature}` +
       '&protocol=int_default';
   }
 
   if (__DEV__) {
     console.log(
-      `[VivaFlow] buildVivaPaymentUri hasAade=${hasAade} hasFiscal=${hasFiscalisationData} clientId=${clientId} amountCents=${amountCents} tipCents=${tipCents}`,
+      `[VivaFlow] buildVivaPaymentUri hasAade=${hasAade} hasFiscal=${hasFiscalisationData} clientId=${clientId} accountType=${params.accountType ?? 'none'} amountCents=${amountCents} tipCents=${tipCents} isvAmountCents=${isvAmountCents}`,
     );
     console.log(`[VivaFlow] buildVivaPaymentUri includeIsv=${String(includeIsv)}`);
+    console.log(`[VivaFlow] buildVivaPaymentUri uri=${uri}`);
   }
 
   return uri;

@@ -8,9 +8,17 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {observer} from 'mobx-react-lite';
 import React, {useEffect, useState} from 'react';
-import {ActivityIndicator, Linking, StyleSheet, View} from 'react-native';
+import {
+  ActivityIndicator,
+  Linking,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import {ROUTES} from '@constants/routes';
-import {useAuthStore, useCartStore, useMenuPreloadStore, usePaymentStore} from '@store';
+import {useAuthStore, useMenuPreloadStore, usePaymentStore} from '@store';
 import {useFailedCardPaymentStore} from '../stores/Payment/FailedCardPaymentStore';
 import {localizationStore, translate} from '../stores/Localization/LocalizationStore';
 import {parseVivaCallbackUrl} from '@services/payment/vivaCallbackParser';
@@ -62,11 +70,20 @@ function DeepLinkBridge(): React.JSX.Element {
         return;
       }
       setDeepLink(url);
+      if (__DEV__) {
+        console.log(`[VivaFlow] Raw Viva callback url len=${url.length}`);
+        console.log(`[VivaFlow] Raw Viva callback url preview=${url.slice(0, 240)}`);
+      }
       const fields = parseVivaCallbackUrl(url);
       if (__DEV__) {
         console.log(
-          `[VivaFlow] Callback parsed status=${fields.status ?? 'null'} action=${fields.action ?? 'null'} txId=${fields.transactionId ?? 'null'} clientTxId=${fields.clientTransactionId ?? 'null'} eventId=${fields.transactionEventId ?? 'null'} amount=${fields.amount ?? 'null'} aadeTxId=${fields.aadeTransactionId ?? 'null'} message=${fields.message ?? 'null'}`,
+          `[VivaFlow] Callback parsed status=${fields.status ?? 'null'} action=${fields.action ?? 'null'} txId=${fields.transactionId ?? 'null'} clientTxId=${fields.clientTransactionId ?? 'null'} eventId=${fields.transactionEventId ?? 'null'} amount=${fields.amount ?? 'null'} aadeTxId=${fields.aadeTransactionId ?? 'null'} fiscalLen=${fields.fiscalisationSigningDetails?.length ?? 0} message=${fields.message ?? 'null'}`,
         );
+        if (fields.fiscalisationSigningDetails) {
+          console.log(
+            `[VivaFlow] Callback fiscalisationSigningDetails=${fields.fiscalisationSigningDetails.slice(0, 120)}`,
+          );
+        }
       }
       if (isVivaCallbackSuccess(fields)) {
         if (__DEV__) {
@@ -75,11 +92,19 @@ function DeepLinkBridge(): React.JSX.Element {
           );
         }
         setPhase('success');
-        useCartStore.getState().clear();
         useFailedCardPaymentStore.getState().clear();
+        const parsedOrderNumber = Number(fields.clientTransactionId ?? '');
         navigation.navigate(ROUTES.TransactionReceipt, {
           paymentMethod: 'card',
+          orderNumber: Number.isFinite(parsedOrderNumber) ? parsedOrderNumber : undefined,
+          transactionId: fields.transactionId ?? undefined,
+          clientTransactionId: fields.clientTransactionId ?? undefined,
+          aadeTransactionId: fields.aadeTransactionId ?? undefined,
+          cardType: fields.cardType ?? undefined,
+          accountNumber: fields.accountNumber ?? undefined,
+          fiscalisationSigningDetails: fields.fiscalisationSigningDetails ?? undefined,
           attemptId: Date.now(),
+          skipCardLaunch: true,
         });
         return;
       }
@@ -152,7 +177,20 @@ export const AppNavigator = observer(function AppNavigator(): React.JSX.Element 
     panHandlers: idlePanHandlers,
     rootTouchProps: idleTouchProps,
     timerActive: idleTimerActive,
+    remainingMs: idleRemainingMs,
   } = useKioskIdleTimeout(navigationRef, idleEnabled, navigationReady);
+
+  const idleWarningVisible = idleTimerActive && idleRemainingMs <= 5_000;
+  const idleWarningRemainingMs = Math.min(idleRemainingMs, 5_000);
+  const idleWarningSeconds = Math.ceil(idleWarningRemainingMs / 1000);
+  const idleWarningProgress = Math.max(idleWarningRemainingMs / 5_000, 0);
+  const timerSize = 72;
+  const idleTimerTickCount = 28;
+  const activeIdleTimerTicks = Math.max(
+    0,
+    Math.round(idleWarningProgress * idleTimerTickCount),
+  );
+  const timerFontSize = 18;
 
   return (
     <KioskIdleActivityProvider resetIdle={resetIdle}>
@@ -270,6 +308,68 @@ export const AppNavigator = observer(function AppNavigator(): React.JSX.Element 
           </>
         )}
       </Stack.Navigator>
+      <Modal
+        visible={idleWarningVisible}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={resetIdle}>
+        <Pressable
+          style={styles.idleWarningModal}
+          onPress={resetIdle}
+          accessibilityRole="button"
+          accessibilityLabel="Αναμονή αδράνειας">
+          <View style={[styles.idleWarningCard]}>
+            <View style={styles.idleWarningTimerWrap} pointerEvents="none">
+              <View
+                style={[
+                  styles.idleTimerRing,
+                  {
+                    width: timerSize,
+                    height: timerSize,
+                    borderRadius: timerSize / 2,
+                  },
+                ]}>
+                <View style={styles.idleTimerTickContainer}>
+                  {Array.from({length: idleTimerTickCount}).map((_, index) => {
+                    const angle =
+                      (index / idleTimerTickCount) * (Math.PI * 2) - Math.PI / 2;
+                    const markerRadius = timerSize / 2 - 5;
+                    const x = timerSize / 2 + markerRadius * Math.cos(angle);
+                    const y = timerSize / 2 + markerRadius * Math.sin(angle);
+                    const isActive = index < activeIdleTimerTicks;
+                    return (
+                      <View
+                        key={index}
+                        style={[
+                          styles.idleTimerTick,
+                          isActive
+                            ? styles.idleTimerTickActive
+                            : styles.idleTimerTickInactive,
+                          {
+                            left: x - 1.5,
+                            top: y - 4,
+                            transform: [{rotate: `${((angle * 180) / Math.PI) + 90}deg`}],
+                          },
+                        ]}
+                      />
+                    );
+                  })}
+                </View>
+                <View style={styles.idleTimerFace}>
+                  <Text style={[styles.idleTimerText, {fontSize: timerFontSize}]}>
+                    {idleWarningSeconds}
+                  </Text>
+                </View>
+              </View>
+            </View>
+            <Text style={styles.idleWarningText}>
+              Πατήστε οπουδήποτε στην οθόνη για να μην χάσετε την πρόοδο της
+              παραγγελίας σας
+            </Text>
+          </View>
+        </Pressable>
+      </Modal>
       {session ? <DeepLinkBridge /> : null}
       </View>
         </NavigationContainer>
@@ -289,6 +389,69 @@ const styles = StyleSheet.create({
   },
   navTouchRoot: {
     flex: 1,
+  },
+  idleTimerRing: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+  },
+  idleTimerTickContainer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+  },
+  idleTimerTick: {
+    position: 'absolute',
+    width: 3,
+    height: 8,
+    borderRadius: 4,
+  },
+  idleTimerTickActive: {
+    backgroundColor: theme.color.accentPrimary,
+  },
+  idleTimerTickInactive: {
+    backgroundColor: 'rgba(255, 129, 39, 0.22)',
+  },
+  idleTimerFace: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: theme.color.bgPrimary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  idleTimerText: {
+    fontFamily: theme.font.bold,
+    color: theme.color.textPrimary,
+    fontWeight: '400',
+  },
+  idleWarningModal: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    padding: 24,
+  },
+  idleWarningCard: {
+    backgroundColor: theme.color.bgPrimary,
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    width: '100%',
+    maxWidth: 520,
+    alignItems: 'center',
+  },
+  idleWarningTimerWrap: {
+    marginBottom: 14,
+  },
+  idleWarningText: {
+    fontFamily: theme.font.regular,
+    fontSize: 18,
+    lineHeight: 26,
+    color: theme.color.textPrimary,
+    textAlign: 'center',
   },
   bootOverlay: {
     ...StyleSheet.absoluteFillObject,

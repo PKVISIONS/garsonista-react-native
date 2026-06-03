@@ -41,6 +41,11 @@ const emptyTableIds: Record<ServiceType, number> = {
   takeaway: 0,
 };
 
+function positiveNumber(value: unknown): number | null {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 function indexProductsByCategory(products: Product[]): ProductsByCategory {
   const byCategory: ProductsByCategory = {};
   for (const product of products) {
@@ -65,9 +70,11 @@ export const useMenuPreloadStore = create<MenuPreloadState>((set, get) => ({
     const tables = catalog.storeTables ?? [];
     const topCategories = catalog.categories.filter(c => c.parentId == null);
     const allCategoryIds = topCategories.map(c => c.id);
+    const loginDineInTableId = positiveNumber(wireRow?.dineinbtn_table);
+    const loginTakeawayTableId = positiveNumber(wireRow?.takeawaybtn_table);
     const tableIds: Record<ServiceType, number> = {
-      'dine-in': resolveDefaultTableId(tables, 'dine-in'),
-      takeaway: resolveDefaultTableId(tables, 'takeaway'),
+      'dine-in': loginDineInTableId ?? resolveDefaultTableId(tables, 'dine-in'),
+      takeaway: loginTakeawayTableId ?? resolveDefaultTableId(tables, 'takeaway'),
     };
 
     const imagesBaseUrl = imagesBaseUrlFromWireRow(wireRow);
@@ -105,6 +112,13 @@ export const useMenuPreloadStore = create<MenuPreloadState>((set, get) => ({
     });
 
     if (__DEV__) {
+      console.log(
+        `[MenuPreload] login table fields dineinbtn_table=${String(
+          wireRow?.dineinbtn_table ?? 'none',
+        )} takeawaybtn_table=${String(
+          wireRow?.takeawaybtn_table ?? 'none',
+        )} resolvedDineInTable=${tableIds['dine-in']} resolvedTakeawayTable=${tableIds.takeaway}`,
+      );
       console.log(
         `[MenuPreload] ready categories=${topCategories.length} dineInTable=${tableIds['dine-in']} takeawayTable=${tableIds.takeaway}`,
       );

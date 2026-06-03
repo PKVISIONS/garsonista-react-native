@@ -9,11 +9,32 @@ export async function getVivaTransactionStatus(transactionId: string): Promise<s
   return legacyPostText(getRuntimeConfig().catalogUrl, form);
 }
 
-export async function sendVivaFinal(payload: Record<string, unknown>): Promise<string> {
+export async function sendVivaFinal(payload: {
+  vivaTransId: string;
+  aadeTransactionId: string;
+  cardType?: string;
+  accountNumber?: string;
+  userId: number;
+  userLogin: string;
+  password: string;
+  notaxdocsToLocalPrinter?: number;
+}): Promise<string> {
   const form = new FormData();
+  form.append('ajax', 'true');
   form.append('select', 'send_viva_final');
-  form.append('payload', JSON.stringify(payload));
-  return legacyPostText(getRuntimeConfig().catalogUrl, form);
+  form.append('app_src', 'kiosk');
+  form.append('viva_transID', payload.vivaTransId);
+  form.append('aadeTransactionId', payload.aadeTransactionId);
+  form.append('vivacardType', payload.cardType ?? '');
+  form.append('vivaaccountNumber', payload.accountNumber ?? '');
+  form.append(
+    'notaxdocs_tolocal_printer',
+    String(payload.notaxdocsToLocalPrinter ?? 0),
+  );
+  form.append('user_id', String(payload.userId));
+  form.append('user', payload.userLogin);
+  form.append('p', payload.password);
+  return legacyPostText(getRuntimeConfig().orderUrl, form);
 }
 
 export async function revertSaleKiosk(idtaxdocument: string): Promise<string> {

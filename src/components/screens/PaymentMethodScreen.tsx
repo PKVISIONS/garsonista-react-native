@@ -5,10 +5,9 @@
  * `credit-card-solid (5) 2.png` → `kiosk-payment-coins.png`, `kiosk-payment-card.png`.
  */
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import React, {useMemo, useState} from 'react';
+import React, {useMemo} from 'react';
 import {
   Image,
-  Platform,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -17,14 +16,10 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {ROUTES} from '@constants/routes';
 import type {RootStackParamList} from '@navigation/types';
-import {useAuthStore, useCartStore, useCatalogStore} from '@store';
-import {printFinalReceipt} from '@services/printing/printerService';
+import {useAuthStore, useCartStore} from '@store';
+import {usePaymentStore} from '@store';
 import {nextTicketNumber} from '@services/ticketCounter';
 import {shadowChoiceCard, theme} from '@theme/kiosk';
-import {
-  buildReceiptPrintContext,
-  ensureReceiptCatalogPremises,
-} from '@utils/receiptCompanyContext';
 import {kioskLogoImageUri, remoteUriSource} from '@utils/productImage';
 import {KioskPressable as Pressable} from '../KioskPressable';
 import {KioskTopBrandLogo} from '../KioskTopBrandLogo';
@@ -49,13 +44,8 @@ function KioskPaymentIcon({variant}: {variant: 'cash' | 'card'}): React.JSX.Elem
   );
 }
 
-const tableLabelFor = (type: 'dine-in' | 'takeaway', tableId: number) =>
-  type === 'dine-in' ? `Τραπέζι ${tableId}` : 'Takeaway';
-
 export function PaymentMethodScreen({navigation}: Props): React.JSX.Element {
-  const session = useAuthStore(s => s.session);
   const wireRow = useAuthStore(s => s.wireRow);
-  const [cashPrinting, setCashPrinting] = useState(false);
   const brandLogoUri = useMemo(() => kioskLogoImageUri(wireRow), [wireRow]);
   const topBrandSource = brandLogoUri
     ? remoteUriSource(brandLogoUri)
@@ -67,6 +57,7 @@ export function PaymentMethodScreen({navigation}: Props): React.JSX.Element {
     }
     return cart.items.reduce((sum, item) => sum + item.lineTotal, 0);
   }, [cart]);
+  const setPendingOrderNumber = usePaymentStore(s => s.setPendingOrderNumber);
   const {width} = useWindowDimensions();
   const cardGap = 14;
   const horizontalPad = Math.max(24, Math.round(width * 0.08));
@@ -80,49 +71,26 @@ export function PaymentMethodScreen({navigation}: Props): React.JSX.Element {
   };
 
   const openCardFlow = () => {
+    const ticket = nextTicketNumber();
+    setPendingOrderNumber(ticket);
     if (__DEV__) {
       console.log(
-        `[VivaFlow] PaymentMethod -> TransactionReceipt(card) total=${total.toFixed(2)}`,
+        `[VivaFlow] PaymentMethod -> TransactionReceipt(card) total=${total.toFixed(2)} txId=${ticket}`,
       );
     }
     navigation.navigate(ROUTES.TransactionReceipt, {
       paymentMethod: 'card',
+      orderNumber: ticket,
+      attemptId: Date.now(),
     });
   };
 
-  const openCashFlow = async () => {
+  const openCashFlow = () => {
     const ticket = nextTicketNumber();
-    if (session && cart) {
-      setCashPrinting(true);
-      try {
-        const catalog = await ensureReceiptCatalogPremises(
-          useCatalogStore.getState().data,
-        );
-        if (catalog && catalog.storePremises.length > 0) {
-          useCatalogStore.getState().setBootstrap(catalog);
-        }
-        await printFinalReceipt(
-          session,
-          cart,
-          buildReceiptPrintContext(wireRow, cart, {
-            orderNumber: ticket,
-            createdAt: new Date(),
-            paymentMethod: 'cash',
-            tableLabel: tableLabelFor(cart.type, cart.tableId),
-            serviceLabel:
-              cart.type === 'dine-in' ? 'Κατανάλωση στο χώρο' : 'Takeaway',
-          }, catalog),
-        );
-      } catch {
-        /* continue to thank-you even if printer fails */
-      } finally {
-        setCashPrinting(false);
-      }
-    }
+    setPendingOrderNumber(ticket);
     navigation.navigate(ROUTES.TransactionReceipt, {
       paymentMethod: 'cash',
       orderNumber: ticket,
-      receiptPrinted: true,
     });
   };
 
@@ -137,16 +105,15 @@ export function PaymentMethodScreen({navigation}: Props): React.JSX.Element {
           <Text style={styles.prompt}>{translate('kiosk.pay.prompt')}</Text>
 
           <View style={[styles.choiceRow, {gap: cardGap}]}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={translate('kiosk.pay.a11yCash')}
-              disabled={cashPrinting}
-              style={({pressed}) => [
-                styles.choiceCard,
-                (pressed || cashPrinting) && styles.choicePressed,
-              ]}
-              android_ripple={{color: 'rgba(0,0,0,0.06)'}}
-              onPress={() => void openCashFlow()}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={translate('kiosk.pay.a11yCash')}
+                style={({pressed}) => [
+                  styles.choiceCard,
+                  pressed && styles.choicePressed,
+                ]}
+                android_ripple={{color: 'rgba(0,0,0,0.06)'}}
+                onPress={openCashFlow}>
               <KioskPaymentIcon variant="cash" />
               <Text style={styles.choiceText}>{translate('kiosk.pay.cash')}</Text>
             </Pressable>

@@ -7,7 +7,7 @@ export type RuntimeConfig = {
   orderUrl: string;
   /** POST target for `seek_afm` (`main_plugins/`). */
   pluginsUrl: string;
-  /** POST target for login (service_go_v150). */
+  /** POST target for login (service_go_v166). */
   authUrl: string;
 };
 
@@ -19,7 +19,7 @@ let config: RuntimeConfig = {
   catalogUrl: `${apiBaseWithTrailingSlash()}service_go_v156/`,
   orderUrl: `${apiBaseWithTrailingSlash()}service_go_v166/`,
   pluginsUrl: `${apiBaseWithTrailingSlash()}main_plugins/`,
-  authUrl: `${apiBaseWithTrailingSlash()}service_go_v150/`,
+  authUrl: `${apiBaseWithTrailingSlash()}service_go_v166/`,
 };
 
 export function getRuntimeConfig(): RuntimeConfig {
@@ -41,14 +41,14 @@ export function setRuntimeConfigFromWireRow(row: Record<string, unknown>): void 
       catalogUrl: localIp,
       orderUrl: localIp,
       pluginsUrl: `${base}main_plugins/`,
-      authUrl: `${root}service_go_v150/`,
+      authUrl: `${root}service_go_v166/`,
     };
   } else {
     config = {
       catalogUrl: `${root}service_go_v156/`,
       orderUrl: `${root}service_go_v166/`,
       pluginsUrl: `${root}main_plugins/`,
-      authUrl: `${root}service_go_v150/`,
+      authUrl: `${root}service_go_v166/`,
     };
   }
 }
@@ -59,6 +59,6 @@ export function resetRuntimeConfig(): void {
     catalogUrl: `${root}service_go_v156/`,
     orderUrl: `${root}service_go_v166/`,
     pluginsUrl: `${root}main_plugins/`,
-    authUrl: `${root}service_go_v150/`,
+    authUrl: `${root}service_go_v166/`,
   };
 }
