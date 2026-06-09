@@ -18,6 +18,10 @@ const HOME_ROUTES = new Set<string>([
   ROUTES.Start,
 ]);
 
+const PAUSED_ROUTES = new Set<string>([
+  ROUTES.AdminSettings,
+]);
+
 type RootTouchProps = Pick<ViewProps, 'onTouchStart'>;
 
 export function useKioskIdleTimeout(
@@ -49,7 +53,8 @@ export function useKioskIdleTimeout(
     enabled &&
     navigationReady &&
     activeRoute != null &&
-    !HOME_ROUTES.has(activeRoute);
+    !HOME_ROUTES.has(activeRoute) &&
+    !PAUSED_ROUTES.has(activeRoute);
 
   const onIdle = useCallback(() => {
     if (!timerActive || !navigationRef.isReady()) {
@@ -57,7 +62,7 @@ export function useKioskIdleTimeout(
     }
     syncActiveRoute();
     const route = activeRouteRef.current;
-    if (!route || HOME_ROUTES.has(route)) {
+    if (!route || HOME_ROUTES.has(route) || PAUSED_ROUTES.has(route)) {
       return;
     }
     if (__DEV__) {

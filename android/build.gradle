@@ -28,4 +28,7 @@ allprojects {
         mavenCentral()
         maven { url "https://repo1.maven.org/maven2" }
     }
+    configurations.configureEach {
+        resolutionStrategy.force("org.jetbrains:annotations:13.0")
+    }
 }

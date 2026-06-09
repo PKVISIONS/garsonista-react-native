@@ -4,3 +4,4 @@ export {useCatalogStore} from './Catalog/CatalogStore';
 export {useMenuPreloadStore} from './MenuPreload/MenuPreloadStore';
 export {usePaymentStore} from './Payment/PaymentStore';
 export {useFailedCardPaymentStore} from './Payment/FailedCardPaymentStore';
+export {useAdminAccessStore} from './Admin/AdminAccessStore';

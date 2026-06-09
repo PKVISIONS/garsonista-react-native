@@ -295,6 +295,7 @@ export function mapOptionGroups(raw: unknown): OptionGroup[] {
               groupName: groupName.trim() ? groupName : null,
               forGrouping: legacyScalar(ov.forgrouping),
               flatPrice: legacyScalar(ov.flat_price),
+              multiQty: num(ov.multiqty, 0) === 1,
             };
           }),
         };
@@ -339,6 +340,7 @@ export function mapOptionGroups(raw: unknown): OptionGroup[] {
         groupName: String(o.descr_option ?? o.group_descr ?? o.option_descr ?? '').trim() || null,
         forGrouping: legacyScalar(o.forgrouping),
         flatPrice: legacyScalar(o.flat_price),
+        multiQty: num(o.multiqty, 0) === 1,
       };
       g.values.push(val);
     }

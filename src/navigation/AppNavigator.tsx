@@ -18,7 +18,7 @@ import {
   View,
 } from 'react-native';
 import {ROUTES} from '@constants/routes';
-import {useAuthStore, useMenuPreloadStore, usePaymentStore} from '@store';
+import {useAdminAccessStore, useAuthStore, useMenuPreloadStore, usePaymentStore} from '@store';
 import {useFailedCardPaymentStore} from '../stores/Payment/FailedCardPaymentStore';
 import {localizationStore, translate} from '../stores/Localization/LocalizationStore';
 import {parseVivaCallbackUrl} from '@services/payment/vivaCallbackParser';
@@ -44,6 +44,7 @@ import {OrderCompleteScreen} from '@screens/OrderCompleteScreen';
 import {CardFailedScreen} from '@screens/CardFailedScreen';
 import {TaxCustomerScreen} from '@screens/TaxCustomerScreen';
 import {PrinterErrorScreen} from '@screens/PrinterErrorScreen';
+import {AdminSettingsScreen} from '@screens/AdminSettingsScreen';
 import {navigationTheme, theme} from '@theme/kiosk';
 import {KioskIdleActivityProvider} from '../context/KioskIdleActivityContext';
 import {useKioskIdleTimeout} from '@hooks/useKioskIdleTimeout';
@@ -147,6 +148,7 @@ export const AppNavigator = observer(function AppNavigator(): React.JSX.Element 
   const menuReady = useMenuPreloadStore(s => s.ready);
   const menuBootstrapPending = useMenuPreloadStore(s => s.menuBootstrapPending);
   const prerenderComplete = useMenuPreloadStore(s => s.prerenderComplete);
+  const adminUnlockVisible = useAdminAccessStore(s => s.unlockVisible);
   const language = localizationStore.currentLanguageCode;
 
   const waitingForMenuPrerender =
@@ -171,7 +173,7 @@ export const AppNavigator = observer(function AppNavigator(): React.JSX.Element 
   useOfflineDrain(Boolean(session));
 
   const stackTheme: Theme = navigationTheme;
-  const idleEnabled = Boolean(session) && !showBootOverlay;
+  const idleEnabled = Boolean(session) && !showBootOverlay && !adminUnlockVisible;
   const {
     resetIdle,
     panHandlers: idlePanHandlers,
@@ -291,6 +293,11 @@ export const AppNavigator = observer(function AppNavigator(): React.JSX.Element 
               name={ROUTES.PrinterError}
               component={PrinterErrorScreen}
               options={{title: translate('kiosk.nav.printer')}}
+            />
+            <Stack.Screen
+              name={ROUTES.AdminSettings}
+              component={AdminSettingsScreen}
+              options={{headerShown: false, gestureEnabled: false}}
             />
           </>
         ) : (

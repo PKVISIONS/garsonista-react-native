@@ -88,13 +88,15 @@ export function ProductDetailScreen({navigation, route}: Props): React.JSX.Eleme
   const lang = localizationStore.currentLanguageCode;
   const [qty, setQty] = useState(1);
   const [selections, setSelections] = useState<Record<number, number[]>>({});
+  const [optionQuantities, setOptionQuantities] = useState<Record<number, number>>({});
   const initializedProductIdRef = useRef<number | undefined>(undefined);
 
   useFocusEffect(
     useCallback(() => {
       initializedProductIdRef.current = undefined;
       setQty(1);
-    }, [productId]),
+      setOptionQuantities({});
+    }, []),
   );
 
   const product = useMemo(() => {
@@ -190,6 +192,10 @@ export function ProductDetailScreen({navigation, route}: Props): React.JSX.Eleme
   useLayoutEffect(() => {
     const openingNewProduct = initializedProductIdRef.current !== productId;
     initializedProductIdRef.current = productId;
+    if (openingNewProduct) {
+      setQty(1);
+      setOptionQuantities({});
+    }
 
     setSelections(prev => {
       const next: Record<number, number[]> = openingNewProduct ? {} : {...prev};
@@ -234,11 +240,25 @@ export function ProductDetailScreen({navigation, route}: Props): React.JSX.Eleme
         const set = new Set(cur);
         if (set.has(valueId)) {
           set.delete(valueId);
+          setOptionQuantities(qtyMap => {
+            const nextQtyMap = {...qtyMap};
+            delete nextQtyMap[valueId];
+            return nextQtyMap;
+          });
         } else {
           set.add(valueId);
         }
         next = {...prev, [group.id]: [...set]};
       } else {
+        setOptionQuantities(qtyMap => {
+          const nextQtyMap = {...qtyMap};
+          for (const existingId of cur) {
+            if (existingId !== valueId) {
+              delete nextQtyMap[existingId];
+            }
+          }
+          return nextQtyMap;
+        });
         next = {...prev, [group.id]: [valueId]};
       }
       return pruneHiddenGroupSelections(optionGroups, next);
@@ -250,9 +270,46 @@ export function ProductDetailScreen({navigation, route}: Props): React.JSX.Eleme
     [optionGroups, selections],
   );
 
+  useEffect(() => {
+    const visibleSelectedValueIds = new Set<number>();
+    for (const group of visibleGroups) {
+      for (const valueId of selections[group.id] ?? []) {
+        visibleSelectedValueIds.add(valueId);
+      }
+    }
+    setOptionQuantities(prev => {
+      let changed = false;
+      const next: Record<number, number> = {};
+      for (const [key, value] of Object.entries(prev)) {
+        const valueId = Number(key);
+        if (visibleSelectedValueIds.has(valueId)) {
+          next[valueId] = value;
+        } else {
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [visibleGroups, selections]);
+
+  const setOptionQuantity = useCallback((group: OptionGroup, valueId: number, nextQty: number) => {
+    const quantity = Math.max(1, nextQty);
+    setOptionQuantities(prev => ({...prev, [valueId]: quantity}));
+    setSelections(prev => {
+      const cur = prev[group.id] ?? [];
+      if (cur.includes(valueId)) {
+        return prev;
+      }
+      const next = group.multiSelect
+        ? {...prev, [group.id]: [...cur, valueId]}
+        : {...prev, [group.id]: [valueId]};
+      return pruneHiddenGroupSelections(optionGroups, next);
+    });
+  }, [optionGroups]);
+
   const selectedOptions: SelectedOption[] = useMemo(
-    () => buildSelectedOptions(lang, optionGroups, selections, pickCatalogText),
-    [lang, optionGroups, selections],
+    () => buildSelectedOptions(lang, optionGroups, selections, pickCatalogText, optionQuantities),
+    [lang, optionGroups, selections, optionQuantities],
   );
 
   const optionsExtra = useMemo(
@@ -293,6 +350,7 @@ export function ProductDetailScreen({navigation, route}: Props): React.JSX.Eleme
     addItem({
       productId: product.id,
       productName: pickCatalogText(lang, product.name, product.nameEn),
+      productImageUrl: product.imageUrl,
       unitPrice: unitWithOptions,
       quantity: qty,
       selectedOptions,
@@ -391,8 +449,10 @@ export function ProductDetailScreen({navigation, route}: Props): React.JSX.Eleme
                       lang={lang}
                       value={v}
                       selected={(selections[group.id] ?? []).includes(v.id)}
+                      quantity={optionQuantities[v.id] ?? 1}
                       imagesBaseUrl={imagesBaseUrl}
                       onPress={() => toggleOption(group, v.id)}
+                      onQuantityChange={nextQty => setOptionQuantity(group, v.id, nextQty)}
                     />
                   ))}
                   {pair.length === 1 ? <View style={styles.optionHalf} /> : null}
@@ -457,22 +517,33 @@ function OptionTile({
   lang,
   value,
   selected,
+  quantity,
   imagesBaseUrl,
   onPress,
+  onQuantityChange,
 }: {
   lang: string;
   value: OptionValue;
   selected: boolean;
+  quantity: number;
   imagesBaseUrl: string | null;
   onPress: () => void;
+  onQuantityChange: (quantity: number) => void;
 }): React.JSX.Element {
   const optionTileW = useOptionTileWidth();
   const imageUri = value.imageUrl
     ? resolveProductImageUri(value.imageUrl, imagesBaseUrl)
     : null;
+  const displayedQuantity = value.multiQty ? Math.max(1, quantity) : 1;
+  const optionName = pickCatalogText(lang, value.name, value.nameEn);
+  const displayName =
+    value.multiQty && displayedQuantity > 1
+      ? `${displayedQuantity} X ${optionName}`
+      : optionName;
+  const displayedPriceDelta = value.priceDelta * displayedQuantity;
   const priceLine =
-    value.priceDelta !== 0
-      ? `${value.priceDelta > 0 ? '+' : ''}${formatEuro(value.priceDelta)}`
+    displayedPriceDelta !== 0
+      ? `${displayedPriceDelta > 0 ? '+' : ''}${formatEuro(displayedPriceDelta)}`
       : null;
 
   if (imageUri) {
@@ -498,7 +569,7 @@ function OptionTile({
               selected && styles.optionTextOn,
             ]}
             numberOfLines={3}>
-            {pickCatalogText(lang, value.name, value.nameEn)}
+            {displayName}
           </Text>
           {priceLine ? (
             <View
@@ -515,6 +586,13 @@ function OptionTile({
                 {priceLine}
               </Text>
             </View>
+          ) : null}
+          {value.multiQty && selected ? (
+            <ModifierQuantityControl
+              selected={selected}
+              quantity={displayedQuantity}
+              onChange={onQuantityChange}
+            />
           ) : null}
         </View>
       </Pressable>
@@ -540,7 +618,7 @@ function OptionTile({
             selected && styles.optionTextOn,
           ]}
           numberOfLines={3}>
-          {pickCatalogText(lang, value.name, value.nameEn)}
+          {displayName}
         </Text>
         {priceLine ? (
           <View
@@ -558,8 +636,53 @@ function OptionTile({
             </Text>
           </View>
         ) : null}
+        {value.multiQty && selected ? (
+          <ModifierQuantityControl
+            selected={selected}
+            quantity={displayedQuantity}
+            onChange={onQuantityChange}
+          />
+        ) : null}
       </View>
     </Pressable>
+  );
+}
+
+function ModifierQuantityControl({
+  selected,
+  quantity,
+  onChange,
+}: {
+  selected: boolean;
+  quantity: number;
+  onChange: (quantity: number) => void;
+}): React.JSX.Element {
+  return (
+    <View style={[
+      styles.modifierQty,
+      selected ? styles.modifierQtySelected : styles.modifierQtyUnselected,
+    ]}>
+      <Pressable
+        style={styles.modifierQtyButton}
+        onPress={() => onChange(Math.max(1, quantity - 1))}>
+        <Text style={[
+          styles.modifierQtyButtonText,
+          selected && styles.modifierQtyButtonTextSelected,
+        ]}>−</Text>
+      </Pressable>
+      <Text style={[
+        styles.modifierQtyText,
+        selected && styles.modifierQtyTextSelected,
+      ]}>{quantity}</Text>
+      <Pressable
+        style={styles.modifierQtyButton}
+        onPress={() => onChange(quantity + 1)}>
+        <Text style={[
+          styles.modifierQtyButtonText,
+          selected && styles.modifierQtyButtonTextSelected,
+        ]}>+</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -779,6 +902,50 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   optionPricePillTextOn: {
+    color: theme.color.onAccent,
+  },
+  modifierQty: {
+    width: 112,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    overflow: 'hidden',
+  },
+  modifierQtySelected: {
+    borderColor: theme.color.onAccent,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+  },
+  modifierQtyUnselected: {
+    borderColor: theme.color.border,
+    backgroundColor: theme.color.bgPrimary,
+  },
+  modifierQtyButton: {
+    width: 34,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modifierQtyButtonText: {
+    fontSize: 18,
+    lineHeight: 22,
+    fontWeight: '700',
+    color: theme.color.textPrimary,
+    textAlign: 'center',
+  },
+  modifierQtyButtonTextSelected: {
+    color: theme.color.onAccent,
+  },
+  modifierQtyText: {
+    width: 32,
+    fontSize: 14,
+    fontWeight: '800',
+    color: theme.color.textPrimary,
+    textAlign: 'center',
+  },
+  modifierQtyTextSelected: {
     color: theme.color.onAccent,
   },
   pressed: {opacity: 0.9},

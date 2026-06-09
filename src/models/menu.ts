@@ -44,4 +44,6 @@ export interface OptionValue {
   groupName?: string | null;
   forGrouping?: number | string | null;
   flatPrice?: number | string | null;
+  /** `option_values[].multiqty` — allows selecting more than one quantity of this modifier. */
+  multiQty?: boolean;
 }

@@ -63,6 +63,7 @@ export function buildSelectedOptions(
   groups: OptionGroup[],
   selections: Record<number, number[]>,
   pickLabel: (lang: string, el: string, en?: string | null) => string,
+  quantities: Record<number, number> = {},
 ): SelectedOption[] {
   const out: SelectedOption[] = [];
   for (const g of visibleOptionGroups(groups, selections)) {
@@ -70,12 +71,18 @@ export function buildSelectedOptions(
     for (const id of ids) {
       const v = g.values.find(x => x.id === id);
       if (v) {
+        const quantity = v.multiQty ? Math.max(1, quantities[v.id] ?? 1) : 1;
+        const baseLabel = pickLabel(lang, v.name, v.nameEn);
+        const descrValue = quantity > 1 ? `${quantity} X ${baseLabel}` : baseLabel;
         out.push({
           groupId: g.id,
           valueId: v.id,
-          label: pickLabel(lang, v.name, v.nameEn),
+          label: descrValue,
+          descrValue,
           groupLabel: v.groupName ?? pickLabel(lang, g.name, g.nameEn),
-          priceDelta: v.priceDelta,
+          quantity,
+          unitPriceDelta: v.priceDelta,
+          priceDelta: v.priceDelta * quantity,
           forGrouping: v.forGrouping,
           flatPrice: v.flatPrice,
         });

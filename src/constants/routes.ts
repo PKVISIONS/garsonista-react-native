@@ -17,6 +17,7 @@ export const ROUTES = {
   CardFailed: 'CardFailed',
   TaxCustomer: 'TaxCustomer',
   PrinterError: 'PrinterError',
+  AdminSettings: 'AdminSettings',
 } as const;
 
 export type RouteName = (typeof ROUTES)[keyof typeof ROUTES];

@@ -18,6 +18,7 @@ export const linking: LinkingOptions<RootStackParamList> = {
       [ROUTES.OrderReview]: 'order',
       [ROUTES.OrderComplete]: 'complete',
       [ROUTES.CardFailed]: 'card-failed',
+      [ROUTES.AdminSettings]: 'admin-settings',
     },
   },
 };

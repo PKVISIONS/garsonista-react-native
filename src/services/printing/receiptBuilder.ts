@@ -30,6 +30,7 @@ export type FinalReceiptPayload = {
 };
 
 export type ReceiptContext = {
+  onPrintLog?: (message: string) => void;
   orderNumber?: number | string | null;
   createdAt?: Date;
   companyName?: string | null;
@@ -132,7 +133,14 @@ function ruleLine(): string {
 
 function renderSelectedOptions(options: SelectedOption[]): string[] {
   return options
-    .map(opt => opt.label.trim())
+    .map(opt => {
+      const label = opt.label.trim();
+      const quantity = Math.max(1, opt.quantity ?? 1);
+      if (quantity <= 1 || new RegExp(`^${quantity}\\s*x\\s+`, 'i').test(label)) {
+        return label;
+      }
+      return `${quantity} X ${label}`;
+    })
     .filter(Boolean)
     .map(label => `   ${label}`);
 }

@@ -36,4 +36,5 @@ export type RootStackParamList = {
   CardFailed: undefined;
   TaxCustomer: undefined;
   PrinterError: {message?: string};
+  AdminSettings: undefined;
 };

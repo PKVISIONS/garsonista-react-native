@@ -19,20 +19,28 @@ import {theme, cardShadow, shadowFooterUp} from '@theme/kiosk';
 import {KioskPressable as Pressable} from '../KioskPressable';
 import {KioskTopBrandLogo} from '../KioskTopBrandLogo';
 import {StartOverConfirmModal} from '../StartOverConfirmModal';
-import {pickCatalogText} from '@utils/catalogText';
 import {
   imagesBaseUrlFromWireRow,
   kioskLogoImageUri,
   productImageSource,
   remoteUriSource,
 } from '@utils/productImage';
-import {localizationStore, translate} from '../../stores/Localization/LocalizationStore';
+import {translate} from '../../stores/Localization/LocalizationStore';
 
 type Props = NativeStackScreenProps<RootStackParamList, typeof ROUTES.OrderReview>;
 
 /** When `kiosk_image3` missing (Cordova `.logo_new_image` — see `productImage.kioskLogoImageUri`) */
 const kioskLogoFallback = require('../../assets/images/garsonista-kiosk-logo.png');
 const cartIconImg = require('../../assets/images/cart-icon.png');
+
+function formatSelectedOptionLabel(option: {label: string; quantity?: number}): string {
+  const label = option.label.trim();
+  const quantity = Math.max(1, option.quantity ?? 1);
+  if (quantity <= 1 || new RegExp(`^${quantity}\\s*x\\s+`, 'i').test(label)) {
+    return label;
+  }
+  return `${quantity} X ${label}`;
+}
 
 export function OrderReviewScreen({navigation}: Props): React.JSX.Element {
   const wireRow = useAuthStore(s => s.wireRow);
@@ -47,7 +55,6 @@ export function OrderReviewScreen({navigation}: Props): React.JSX.Element {
 
   const {width} = useWindowDimensions();
   const cardMargin = Math.max(12, Math.round(width * 0.03));
-  const lang = localizationStore.currentLanguageCode;
   const [startOverModalVisible, setStartOverModalVisible] = useState(false);
 
   const total = useMemo(() => {
@@ -91,34 +98,25 @@ export function OrderReviewScreen({navigation}: Props): React.JSX.Element {
             const lineStr = `${item.lineTotal.toFixed(2).replace('.', ',')}€`;
             const desc =
               item.selectedOptions.length > 0
-                ? item.selectedOptions.map(o => o.label).join(', ')
+                ? item.selectedOptions.map(formatSelectedOptionLabel).join(', ')
                 : '';
             const prod = catalog?.products.find(p => p.id === item.productId);
-            const menuCategory = prod
-              ? catalog?.categories.find(c => c.id === prod.categoryId)
-              : undefined;
-            const categoryLabel = menuCategory
-              ? pickCatalogText(lang, menuCategory.name, menuCategory.nameEn)
-              : null;
-            const categoryIconSrc = menuCategory?.imageUrl
-              ? productImageSource(menuCategory.imageUrl, imagesBaseUrl)
+            const productImageUrl = item.productImageUrl ?? prod?.imageUrl ?? null;
+            const productImageSrc = productImageUrl
+              ? productImageSource(productImageUrl, imagesBaseUrl)
               : null;
             return (
               <View key={item.lineId} style={styles.cartCard}>
                 <View style={styles.lineCategoryColumn}>
-                  {menuCategory ? (
+                  {prod || productImageSrc ? (
                     <View style={styles.lineCategoryBadge}>
-                      {categoryIconSrc ? (
+                      {productImageSrc ? (
                         <Image
-                          source={categoryIconSrc}
+                          source={productImageSrc}
                           style={styles.lineCategoryIcon as ImageStyle}
                           resizeMode="contain"
                           fadeDuration={Platform.OS === 'android' ? 0 : undefined}
-                          accessibilityLabel={
-                            categoryLabel && categoryLabel.length > 0
-                              ? categoryLabel
-                              : undefined
-                          }
+                          accessibilityLabel={item.productName}
                         />
                       ) : (
                         <View

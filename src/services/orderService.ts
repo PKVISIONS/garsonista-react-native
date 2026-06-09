@@ -56,7 +56,8 @@ export async function submitCartOnline(
   form.append('ismellon', String(Number((ctx as Record<string, unknown>).ismellon ?? 0)));
   form.append('isvivacloud', String(Number((ctx as Record<string, unknown>).isvivacloud ?? 0)));
   form.append('tid_nsp', String((ctx as Record<string, unknown>).tid_nsp ?? ''));
-  form.append('always_receipt_final', String(Number((ctx as Record<string, unknown>).always_receipt_final ?? 0)));
+  form.append('always_receipt_final', '1');
+  form.append('auto_receipt_switch', '1');
   form.append('tipAmount', String(options?.tipAmount ?? 0));
   form.append('user', String(ctx.userLogin));
   form.append('p', String(ctx.password));

@@ -40,7 +40,7 @@ export function buildWireOrdersFromCart(
   const cardAmount = paymentMethod === 'card' || paymentMethod === 'iris' ? totalAmount : 0;
   const bankAmount = paymentMethod === 'bank' ? totalAmount : 0;
   const POSclientUNID = createPosClientUnid();
-  const autoReceiptForPayment = paymentMethod === 'card' ? 0 : ctx.auto_receipt;
+  const autoReceiptForPayment = 1;
   const hasTidNsp = String(ctx.tid_nsp ?? '').trim() !== '';
   const cardSignatureMode = paymentMethod === 'card' && hasTidNsp;
   let idx = 0;
@@ -48,17 +48,26 @@ export function buildWireOrdersFromCart(
     idx += 1;
     const ISODate = new Date().toISOString();
     const clientUNID = `${ISODate}-${idx}-${ctx.slogtok}-${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
-    const mods = item.selectedOptions.map(o => ({
-      idoption_value: o.valueId,
-      idoption: o.groupId,
-      acost: o.priceDelta,
-      descr_value: o.label,
-      descr_option: o.groupLabel ?? '',
-      forgrouping: o.forGrouping ?? '',
-      flat_price: o.flatPrice ?? '',
-      name: o.label,
-      text: o.label,
-    }));
+    const mods = item.selectedOptions.map(o => {
+      const qty = Math.max(1, Number(o.quantity ?? 1));
+      const unitCost = Number(o.unitPriceDelta ?? o.priceDelta);
+      const totalCost = Number((unitCost * qty).toFixed(2));
+      const descrValue = o.descrValue ?? o.label;
+      return {
+        idoption_value: o.valueId,
+        idoption: o.groupId,
+        acost: totalCost,
+        descr_value: descrValue,
+        descr_option: o.groupLabel ?? '',
+        aqty: qty,
+        qty,
+        acost_piece: unitCost,
+        forgrouping: o.forGrouping ?? '',
+        flat_price: o.flatPrice ?? '',
+        name: descrValue,
+        text: descrValue,
+      };
+    });
     return {
       headid: 0,
       itemid: 0,

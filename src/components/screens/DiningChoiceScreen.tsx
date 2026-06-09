@@ -18,6 +18,11 @@ const dineInImg = require('../../assets/images/kiosk_dinein.png');
 const takeAwayImg = require('../../assets/images/takeaway_kiosk.png');
 const kioskBrandLogoFallback = require('../../assets/images/garsonista-kiosk-logo.png');
 
+function hasServiceTable(value: unknown): boolean {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0;
+}
+
 function DiningChoiceCard({
   label,
   icon,
@@ -46,6 +51,8 @@ function DiningChoiceCard({
 
 export function DiningChoiceScreen({navigation}: Props): React.JSX.Element {
   const wireRow = useAuthStore(s => s.wireRow);
+  const showDineIn = hasServiceTable(wireRow?.dineinbtn_table);
+  const showTakeaway = hasServiceTable(wireRow?.takeawaybtn_table);
   const brandLogoUri = useMemo(() => kioskLogoImageUri(wireRow), [wireRow]);
   const topBrandSource = brandLogoUri
     ? remoteUriSource(brandLogoUri)
@@ -65,16 +72,20 @@ export function DiningChoiceScreen({navigation}: Props): React.JSX.Element {
         <View style={styles.centeredContent}>
           <Text style={styles.question}>{translate('kiosk.dining.question')}</Text>
           <View style={styles.cardsRow}>
-            <DiningChoiceCard
-              label={translate('kiosk.dining.dineIn')}
-              icon={dineInImg}
-              onPress={() => openMenu('dine-in')}
-            />
-            <DiningChoiceCard
-              label={translate('kiosk.dining.takeaway')}
-              icon={takeAwayImg}
-              onPress={() => openMenu('takeaway')}
-            />
+            {showDineIn ? (
+              <DiningChoiceCard
+                label={translate('kiosk.dining.dineIn')}
+                icon={dineInImg}
+                onPress={() => openMenu('dine-in')}
+              />
+            ) : null}
+            {showTakeaway ? (
+              <DiningChoiceCard
+                label={translate('kiosk.dining.takeaway')}
+                icon={takeAwayImg}
+                onPress={() => openMenu('takeaway')}
+              />
+            ) : null}
           </View>
         </View>
       </View>
