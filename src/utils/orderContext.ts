@@ -1,11 +1,13 @@
 import type {BuildWireContext} from '@services/adapters/orderAdapter';
 import type {AuthSession} from '@models/auth';
+import {useCatalogStore} from '@store';
 
 export function buildWireContext(
   session: AuthSession,
   wireRow: Record<string, unknown> | null,
   tableId: number,
 ): BuildWireContext {
+  const table = useCatalogStore.getState().data?.storeTables.find(t => t.id === tableId);
   return {
     userId: session.userId,
     userToken: session.token,
@@ -20,7 +22,8 @@ export function buildWireContext(
     ismellon: Number(wireRow?.ismellon ?? 0),
     isvivacloud: Number(wireRow?.isvivacloud ?? 0),
     tid_nsp: String(wireRow?.tid_nsp ?? ''),
-    always_receipt_final: Number(wireRow?.always_receipt_final ?? 0),
+    always_receipt_final: Number(table?.always_receipt_final ?? wireRow?.always_receipt_final ?? 0),
+    notaxdocs_tolocal_printer: Number(wireRow?.notaxdocs_tolocal_printer ?? 0),
     novus_user: Number(wireRow?.novus_user ?? 0),
     auto_receipt: Number(wireRow?.auto_receipt ?? 1),
     headaa: Number(wireRow?.headaa ?? 0),

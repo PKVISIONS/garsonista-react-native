@@ -1,5 +1,6 @@
 import {mapVivaTransaction} from '../adapters/paymentAdapter';
 import type {VivaTransaction} from '@models/payment';
+import {DEBUG_LOGS_ENABLED} from '@constants/config';
 
 /** Fields returned on deep link / app callback (see legacy URLHandling.js). */
 export type VivaCallbackFields = Record<string, string | null>;
@@ -34,7 +35,7 @@ export function parseVivaCallbackUrl(url: string): VivaCallbackFields {
   fiscalisationSigningDetails: get('fiscalisationSigningDetails'),
   };
 
-  if (__DEV__) {
+  if (DEBUG_LOGS_ENABLED) {
     console.log(`[VivaFlow] Raw Viva callback url len=${url.length}`);
     console.log(`[VivaFlow] Raw Viva callback url preview=${url.slice(0, 240)}`);
     const summary = Object.entries(fields)

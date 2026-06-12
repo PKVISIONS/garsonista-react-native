@@ -4,7 +4,7 @@
   "expo": {
     "name": "Garsonista Kiosk",
     "slug": "garsonista-kiosk",
-    "version": "0.0.2",
+    "version": "0.0.8",
     "scheme": "garsonistakiosk",
     "userInterfaceStyle": "automatic",
     "ios": {

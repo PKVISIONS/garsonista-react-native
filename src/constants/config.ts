@@ -1,3 +1,6 @@
+export const APP_VERSION = '0.0.8';
+export const DEBUG_LOGS_ENABLED = true;
+
 /** Default API host (legacy web client parity). Override via env or local settings. */
 export const API_BASE_URL = 'https://garsonista4.datapp.gr/';
 

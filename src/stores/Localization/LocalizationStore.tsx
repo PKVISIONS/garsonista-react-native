@@ -29,7 +29,6 @@ export class LocalizationStore {
   supportedLanguages: {code: string; label: string}[] = [
     {code: 'el', label: '🇬🇷'},
     {code: 'en', label: '🇬🇧'},
-    {code: 'de', label: '🇩🇪'},
   ];
 
   constructor() {
@@ -75,7 +74,7 @@ export class LocalizationStore {
     }
     const locales = getLocales();
     const code = locales[0]?.languageCode ?? 'el';
-    if (['el', 'en', 'de'].includes(code)) {
+    if (['el', 'en'].includes(code)) {
       return code;
     }
     return 'el';

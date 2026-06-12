@@ -14,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import {DEBUG_LOGS_ENABLED} from '@constants/config';
 import {ROUTES} from '@constants/routes';
 import type {RootStackParamList} from '@navigation/types';
 import {useAuthStore, useCartStore} from '@store';
@@ -73,7 +74,7 @@ export function PaymentMethodScreen({navigation}: Props): React.JSX.Element {
   const openCardFlow = () => {
     const ticket = nextTicketNumber();
     setPendingOrderNumber(ticket);
-    if (__DEV__) {
+    if (DEBUG_LOGS_ENABLED) {
       console.log(
         `[VivaFlow] PaymentMethod -> TransactionReceipt(card) total=${total.toFixed(2)} txId=${ticket}`,
       );

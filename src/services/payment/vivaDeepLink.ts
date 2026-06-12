@@ -1,5 +1,6 @@
 import {STORAGE_KEYS, VIVA_APP_ID} from '@constants/config';
 import {mmkv} from '../../storage/mmkv';
+import {vivaLog} from './vivaLogger';
 
 export type VivaSaleParams = {
   clientTransactionId: string;
@@ -41,6 +42,7 @@ function shouldIncludeIsvParams(override?: boolean, accountType?: string): boole
  * Demo accounts omit ISV fee parameters.
  */
 export function buildVivaPaymentUri(params: VivaSaleParams): string {
+  const q = (value: string | number | boolean): string => encodeURIComponent(String(value));
   const amountCents = Math.round(params.amountEuros * 100);
   const tipCents = Math.round((params.tipEuros ?? 0) * 100);
   const isvAmountCents = Math.round(params.amountEuros * 0.001 * 100);
@@ -50,49 +52,64 @@ export function buildVivaPaymentUri(params: VivaSaleParams): string {
   const clientId = baseClientId;
   const showReceipt = params.showReceipt ?? true;
   const hideInteractiveUi = hasAade || hasFiscalisationData;
-  const includeIsv =
-    shouldIncludeIsvParams(params.includeIsv, params.accountType) && isvAmountCents > 0;
+  const includeIsv = shouldIncludeIsvParams(params.includeIsv, params.accountType);
 
   let uri =
     'vivapayclient://pay/v1' +
-    `?appId=${VIVA_APP_ID}` +
+    `?appId=${q(VIVA_APP_ID)}` +
     '&action=sale' +
-    `&clientTransactionId=${clientId}` +
+    `&clientTransactionId=${q(clientId)}` +
+    `&merchantKey=${q('Tony_Pegios')}` +
     `&amount=${amountCents}` +
     `&tipAmount=${tipCents}` +
     `&show_receipt=${hideInteractiveUi ? 'false' : showReceipt ? 'true' : 'false'}` +
     `&show_transaction_result=${hideInteractiveUi ? 'false' : showReceipt ? 'true' : 'false'}` +
     `&show_rating=${hideInteractiveUi ? 'false' : 'true'}`;
 
-  uri += '&callback=garsonista_offline://viva-return';
-
   if (includeIsv) {
     uri +=
-      `&ISV_amount=${Math.round(params.amountEuros * 0.001 * 100)}` +
-      '&ISV_clientId=78mmql4v0qfcdgep1l7mhjxfkzn8msi8zuzwa8q0b61t1.apps.vivapayments.com' +
-      '&ISV_clientSecret=X7JpNWY190cH649R3n2koFHh0x5THP' +
-      '&ISV_sourceCode=1350';
+      '&ISV_amount=0' +
+      `&ISV_clientId=${q('78mmql4v0qfcdgep1l7mhjxfkzn8msi8zuzwa8q0b61t1.apps.vivapayments.com')}` +
+      `&ISV_clientSecret=${q('X7JpNWY190cH649R3n2koFHh0x5THP')}` +
+      `&ISV_sourceCode=${q('1350')}`;
   }
 
   if (params.fiscalisationData && !hasAade) {
-    uri += `&fiscalisationData=${encodeURIComponent(params.fiscalisationData)}`;
+    uri += `&fiscalisationData=${q(params.fiscalisationData)}`;
   }
 
   if (hasAade && params.aade) {
     uri +=
-      '&aadeProviderId=112' +
-      `&aadeProviderSignatureData=${params.aade.digest}` +
+      `&aadeProviderId=${q('112')}` +
+      `&aadeProviderSignatureData=${q(params.aade.digest)}` +
       `&aadeProviderSignature=${params.aade.signature}` +
       '&protocol=int_default';
   }
 
-  if (__DEV__) {
-    console.log(
-      `[VivaFlow] buildVivaPaymentUri hasAade=${hasAade} hasFiscal=${hasFiscalisationData} clientId=${clientId} accountType=${params.accountType ?? 'none'} amountCents=${amountCents} tipCents=${tipCents} isvAmountCents=${isvAmountCents}`,
-    );
-    console.log(`[VivaFlow] buildVivaPaymentUri includeIsv=${String(includeIsv)}`);
-    console.log(`[VivaFlow] buildVivaPaymentUri uri=${uri}`);
-  }
+  uri += `&callback=${q('garsonista_offline://https://garsonista.datapp.gr/main/')}`;
+
+  vivaLog('buildVivaPaymentUri request', {
+    appId: VIVA_APP_ID,
+    action: 'sale',
+    clientTransactionId: clientId,
+    merchantKey: 'Tony_Pegios',
+    amountCents,
+    tipCents,
+    showReceipt: hideInteractiveUi ? false : showReceipt,
+    showTransactionResult: hideInteractiveUi ? false : showReceipt,
+    showRating: !hideInteractiveUi,
+    hasAade,
+    hasFiscalisationData,
+    accountType: params.accountType ?? '',
+    includeIsv,
+    isvAmountCents: includeIsv ? 0 : isvAmountCents,
+    fiscalisationData: params.fiscalisationData ?? '',
+    aadeProviderId: hasAade ? '112' : '',
+    aadeProviderSignatureData: params.aade?.digest ?? '',
+    aadeProviderSignature: params.aade?.signature ?? '',
+    callback: 'garsonista_offline://https://garsonista.datapp.gr/main/',
+    uri,
+  });
 
   return uri;
 }

@@ -2,6 +2,7 @@ import {observer} from 'mobx-react-lite';
 import React, {useState} from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -11,11 +12,12 @@ import {
   View,
 } from 'react-native';
 import {KioskTouchableOpacity as TouchableOpacity} from '../KioskTouchableOpacity';
-import {LanguageSelector} from '../LanguageSelector';
 import {useAuthStore} from '@store';
 import {theme, typeCaptionSm} from '@theme/kiosk';
 import {formatRequestError} from '@utils/errors';
 import {translate} from '../../stores/Localization/LocalizationStore';
+
+const garsonistaLogo = require('../../assets/images/garsonista-kiosk-logo.png');
 
 export const LoginScreen = observer(function LoginScreen(): React.JSX.Element {
   const {width} = useWindowDimensions();
@@ -46,47 +48,49 @@ export const LoginScreen = observer(function LoginScreen(): React.JSX.Element {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.container}>
-      <LanguageSelector style={styles.langRow} />
-      <View style={[styles.sheet, {paddingHorizontal: sheetPadH}]}>
-        <Text style={styles.formTitle}>{translate('loginScreen.title')}</Text>
-        <Text style={styles.fieldLabel}>{translate('loginScreen.email')}</Text>
-        <TextInput
-          style={styles.input}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          editable={!loading}
-          placeholder={translate('loginScreen.email')}
-          placeholderTextColor={theme.color.textMuted}
-          value={email}
-          onChangeText={setEmail}
-        />
-        <Text style={styles.fieldLabel}>{translate('loginScreen.password')}</Text>
-        <TextInput
-          style={[styles.input, styles.inputLast]}
-          secureTextEntry
-          editable={!loading}
-          placeholder={translate('loginScreen.password')}
-          placeholderTextColor={theme.color.textMuted}
-          value={password}
-          onChangeText={setPassword}
-        />
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-        <TouchableOpacity
-          activeOpacity={0.85}
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={() => {
-            void onSubmit();
-          }}
-          disabled={loading}>
+      <View style={styles.centerStack}>
+        <Image source={garsonistaLogo} style={styles.logo} resizeMode="contain" />
+        <View style={[styles.sheet, {paddingHorizontal: sheetPadH}]}>
+          <Text style={styles.formTitle}>{translate('loginScreen.title')}</Text>
+          <Text style={styles.fieldLabel}>{translate('loginScreen.email')}</Text>
+          <TextInput
+            style={styles.input}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            editable={!loading}
+            placeholder={translate('loginScreen.email')}
+            placeholderTextColor={theme.color.textMuted}
+            value={email}
+            onChangeText={setEmail}
+          />
+          <Text style={styles.fieldLabel}>{translate('loginScreen.password')}</Text>
+          <TextInput
+            style={[styles.input, styles.inputLast]}
+            secureTextEntry
+            editable={!loading}
+            placeholder={translate('loginScreen.password')}
+            placeholderTextColor={theme.color.textMuted}
+            value={password}
+            onChangeText={setPassword}
+          />
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+          <TouchableOpacity
+            activeOpacity={0.85}
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={() => {
+              void onSubmit();
+            }}
+            disabled={loading}>
+            {loading ? (
+              <ActivityIndicator color={theme.color.onAccent} />
+            ) : (
+              <Text style={styles.buttonText}>{translate('loginScreen.title')}</Text>
+            )}
+          </TouchableOpacity>
           {loading ? (
-            <ActivityIndicator color={theme.color.onAccent} />
-          ) : (
-            <Text style={styles.buttonText}>{translate('loginScreen.title')}</Text>
-          )}
-        </TouchableOpacity>
-        {loading ? (
-          <Text style={styles.loadingHint}>{translate('loginScreen.loading')}</Text>
-        ) : null}
+            <Text style={styles.loadingHint}>{translate('loginScreen.loading')}</Text>
+          ) : null}
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -96,15 +100,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 15,
-    paddingTop: 12,
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: theme.color.bgMuted,
   },
-  langRow: {
-    alignSelf: 'flex-end',
-    marginBottom: 8,
-    marginRight: 4,
+  centerStack: {
+    width: '100%',
+    maxWidth: 560,
+    alignItems: 'center',
+  },
+  logo: {
+    width: 220,
+    height: 76,
+    marginBottom: 24,
   },
   sheet: {
     width: '100%',

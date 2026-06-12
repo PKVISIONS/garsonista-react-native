@@ -1,5 +1,10 @@
 import axios, {type AxiosInstance, type InternalAxiosRequestConfig} from 'axios';
 import {API_BASE_URL} from '@constants/config';
+import {
+  logAxiosError,
+  logAxiosResponse,
+  markAxiosRequestStart,
+} from './apiLogger';
 
 export type Credentials = {user: string; password: string};
 
@@ -64,7 +69,8 @@ export function createHttpClient(baseURL: string = API_BASE_URL): AxiosInstance 
     timeout: 60_000,
   });
 
-  client.interceptors.request.use(cfg => injectFormBody(cfg));
+  client.interceptors.request.use(cfg => markAxiosRequestStart(injectFormBody(cfg)));
+  client.interceptors.response.use(logAxiosResponse, logAxiosError);
 
   return client;
 }

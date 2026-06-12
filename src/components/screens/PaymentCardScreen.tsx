@@ -2,9 +2,13 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useEffect, useRef} from 'react';
 import {Linking, StyleSheet, Text, View} from 'react-native';
 import {KioskTouchableOpacity as TouchableOpacity} from '../KioskTouchableOpacity';
+import {DEBUG_LOGS_ENABLED} from '@constants/config';
 import type {RootStackParamList} from '@navigation/types';
 import {buildVivaPaymentUri} from '@services/payment/vivaDeepLink';
+import {idtaxdocumentFromClientTransactionId} from '@services/payment/cardPaymentRecovery';
 import {navigateToCardFailed} from '@services/payment/vivaFlow';
+import {vivaLog} from '@services/payment/vivaLogger';
+import {revertSaleKiosk} from '@services/paymentService';
 import {useAuthStore, usePaymentStore} from '@store';
 import {theme, titleSection} from '@theme/kiosk';
 import {translate} from '../../stores/Localization/LocalizationStore';
@@ -15,17 +19,23 @@ export function PaymentCardScreen({route, navigation}: Props): React.JSX.Element
   const {amountEuros, fiscalisationData, clientTransactionId, orderNumber} = route.params;
   const txId = String(orderNumber ?? clientTransactionId);
   const wireRow = useAuthStore(s => s.wireRow);
+  const mainUserId = Number(wireRow?.main_user_id ?? 0);
   const paroxosCustomersId = Number(wireRow?.paroxos_customers_id ?? 0);
   const accountType =
     paroxosCustomersId === 50
       ? 'demo'
       : String(wireRow?.account_type ?? wireRow?.accountType ?? wireRow?.type_account ?? '');
+  const includeIsv =
+    ![971, 2851, 3503, 3506].includes(mainUserId) &&
+    paroxosCustomersId !== 50;
   const setPhase = usePaymentStore(s => s.setPhase);
   const setError = usePaymentStore(s => s.setError);
+  const setVivaRequest = usePaymentStore(s => s.setVivaRequest);
+  const setVivaResponse = usePaymentStore(s => s.setVivaResponse);
   const launchedRef = useRef(false);
 
   const launch = async () => {
-    if (__DEV__) {
+    if (DEBUG_LOGS_ENABLED) {
       console.log(
         `[VivaFlow] PaymentCard launch start amount=${amountEuros.toFixed(2)} txId=${txId} hasFiscal=${Boolean(
           fiscalisationData?.trim(),
@@ -35,7 +45,7 @@ export function PaymentCardScreen({route, navigation}: Props): React.JSX.Element
     setError(null);
     setPhase('initiating');
     if (!fiscalisationData || !fiscalisationData.trim()) {
-      if (__DEV__) {
+      if (DEBUG_LOGS_ENABLED) {
         console.log('[VivaFlow] PaymentCard launching without fiscalisationData');
       }
     }
@@ -43,16 +53,31 @@ export function PaymentCardScreen({route, navigation}: Props): React.JSX.Element
       clientTransactionId: txId,
       amountEuros,
       fiscalisationData,
+      includeIsv,
       accountType,
     });
+    setVivaRequest(uri);
+    setVivaResponse(null);
+    vivaLog('PaymentCard intent ready', {
+      amountEuros,
+      txId,
+      clientTransactionId,
+      orderNumber: orderNumber ?? null,
+      hasFiscalisationData: Boolean(fiscalisationData?.trim()),
+      fiscalisationDataLength: fiscalisationData?.length ?? 0,
+      accountType,
+      includeIsv,
+      uri,
+    });
     try {
-      if (__DEV__) {
+      if (DEBUG_LOGS_ENABLED) {
         console.log('[VivaFlow] PaymentCard deeplink built');
       }
       console.log('[Viva] Launch URI:', uri);
       const can = await Linking.canOpenURL(uri);
       console.log('[Viva] canOpenURL:', can);
-      if (__DEV__) {
+      vivaLog('PaymentCard canOpenURL result', {canOpen: can, uri});
+      if (DEBUG_LOGS_ENABLED) {
         console.log(`[VivaFlow] Linking.canOpenURL=${String(can)}`);
       }
       if (!can) {
@@ -61,13 +86,42 @@ export function PaymentCardScreen({route, navigation}: Props): React.JSX.Element
         navigateToCardFailed(navigation);
         return;
       }
+      const idtaxdocument =
+        idtaxdocumentFromClientTransactionId(clientTransactionId) ??
+        idtaxdocumentFromClientTransactionId(txId);
+      if (idtaxdocument) {
+        if (DEBUG_LOGS_ENABLED) {
+          console.log(
+            `[VivaFlow] PaymentCard pre-viva revert_sale_kiosk_ajax idtaxdocument=${idtaxdocument}`,
+          );
+        }
+        vivaLog('PaymentCard pre-viva revert_sale_kiosk_ajax start', {
+          idtaxdocument,
+          lastVivaRequest: uri,
+          lastVivaResponse: 'no response yet',
+        });
+        await revertSaleKiosk(idtaxdocument, {
+          lastVivaRequest: uri,
+          lastVivaResponse: 'no response yet',
+        });
+        vivaLog('PaymentCard pre-viva revert_sale_kiosk_ajax done', {
+          idtaxdocument,
+        });
+      }
       setPhase('awaiting_app');
+      vivaLog('PaymentCard Linking.openURL start', {uri});
       await Linking.openURL(uri);
-      if (__DEV__) {
+      vivaLog('PaymentCard Linking.openURL resolved', {uri});
+      if (DEBUG_LOGS_ENABLED) {
         console.log('[VivaFlow] Linking.openURL resolved');
       }
     } catch (e) {
-      if (__DEV__) {
+      vivaLog('PaymentCard launch error', {
+        name: (e as Error)?.name ?? 'unknown',
+        message: (e as Error)?.message ?? String(e),
+        uri,
+      });
+      if (DEBUG_LOGS_ENABLED) {
         console.log(
           `[VivaFlow] PaymentCard launch error name=${(e as Error)?.name ?? 'unknown'} message=${(e as Error)?.message ?? String(e)}`,
         );
@@ -79,7 +133,7 @@ export function PaymentCardScreen({route, navigation}: Props): React.JSX.Element
   };
 
   useEffect(() => {
-    if (__DEV__) {
+    if (DEBUG_LOGS_ENABLED) {
       console.log(
         `[VivaFlow] PaymentCard mounted amount=${amountEuros.toFixed(2)} txId=${txId} hasFiscal=${Boolean(
           fiscalisationData?.trim(),

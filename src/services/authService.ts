@@ -9,6 +9,7 @@ import {resetRuntimeConfig, setRuntimeConfigFromWireRow} from '@constants/runtim
 import {API_BASE_URL, API_BASE_URL_ALT} from '@constants/config';
 
 const AUTH_SERVICE_PATH = 'service_go_v166/';
+const LEGACY_MOBILEAPP_BASE_URL = 'https://mobileapp.garsonista.gr/';
 
 export type LoginResult = {
   session: ReturnType<typeof mapLoginResponse>;
@@ -66,39 +67,45 @@ function shouldTryAlternateLoginHost(err: unknown): boolean {
 }
 
 /**
- * Login uses `service_go_v166/` + `select=login`. Tries primary host, then alternate on transport failure.
+ * Login uses `service_go_v166/` + `select=login`.
+ * The legacy kiosk reads production POS/AADE fields from mobileapp first.
  */
 export async function login(email: string, password: string): Promise<LoginResult> {
   setApiCredentials({user: email, password});
-  const form = buildLoginForm(email, password);
+  const hosts = [
+    `${LEGACY_MOBILEAPP_BASE_URL}${AUTH_SERVICE_PATH}`,
+    `${API_BASE_URL}${AUTH_SERVICE_PATH}`,
+    `${API_BASE_URL_ALT}${AUTH_SERVICE_PATH}`,
+  ];
 
-  const primaryAuth = `${API_BASE_URL}${AUTH_SERVICE_PATH}`;
-  const altAuth = `${API_BASE_URL_ALT}${AUTH_SERVICE_PATH}`;
-
-  let text: string;
-  try {
-    text = await postLogin(primaryAuth, form);
-  } catch (first) {
-    if (__DEV__) {
-      const firstErr = first as Error & {status?: number};
-      console.warn(
-        `[Garsonista HTTP] login primary failed host=${new URL(primaryAuth).host} status=${firstErr.status ?? 'n/a'} msg=${firstErr.message ?? 'unknown'}`,
-      );
-    }
-    if (!shouldTryAlternateLoginHost(first)) {
-      throw first;
-    }
+  let text = '';
+  let firstFailure: unknown = null;
+  for (let i = 0; i < hosts.length; i += 1) {
+    const url = hosts[i];
     try {
-      text = await postLogin(altAuth, buildLoginForm(email, password));
-    } catch (second) {
+      text = await postLogin(url, buildLoginForm(email, password));
       if (__DEV__) {
-        const secondErr = second as Error & {status?: number};
+        console.log(`[Garsonista HTTP] login ok host=${new URL(url).host}`);
+      }
+      break;
+    } catch (error) {
+      if (!firstFailure) {
+        firstFailure = error;
+      }
+      if (__DEV__) {
+        const err = error as Error & {status?: number};
         console.warn(
-          `[Garsonista HTTP] login alternate failed host=${new URL(altAuth).host} status=${secondErr.status ?? 'n/a'} msg=${secondErr.message ?? 'unknown'}`,
+          `[Garsonista HTTP] login failed host=${new URL(url).host} status=${err.status ?? 'n/a'} msg=${err.message ?? 'unknown'}`,
         );
       }
-      throw first;
+      if (!shouldTryAlternateLoginHost(error) || i === hosts.length - 1) {
+        throw firstFailure ?? error;
+      }
     }
+  }
+
+  if (!text) {
+    throw firstFailure ?? new Error('Login failed');
   }
 
   const session = mapLoginResponse(text);

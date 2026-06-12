@@ -1,5 +1,7 @@
 import {API_BASE_URL} from './config';
 
+const LEGACY_MOBILEAPP_BASE_URL = 'https://mobileapp.garsonista.gr/';
+
 export type RuntimeConfig = {
   /** POST target for catalog reads (service_go_v156 or local server). */
   catalogUrl: string;
@@ -15,9 +17,13 @@ function apiBaseWithTrailingSlash(): string {
   return API_BASE_URL.endsWith('/') ? API_BASE_URL : `${API_BASE_URL}/`;
 }
 
+function mobileAppBaseWithTrailingSlash(): string {
+  return LEGACY_MOBILEAPP_BASE_URL;
+}
+
 let config: RuntimeConfig = {
   catalogUrl: `${apiBaseWithTrailingSlash()}service_go_v156/`,
-  orderUrl: `${apiBaseWithTrailingSlash()}service_go_v166/`,
+  orderUrl: `${mobileAppBaseWithTrailingSlash()}service_go_v166/`,
   pluginsUrl: `${apiBaseWithTrailingSlash()}main_plugins/`,
   authUrl: `${apiBaseWithTrailingSlash()}service_go_v166/`,
 };
@@ -35,6 +41,7 @@ export function setRuntimeConfigFromWireRow(row: Record<string, unknown>): void 
   const offlineBasic =
     Number((row as {offline_basic_tables?: number}).offline_basic_tables ?? 0) === 1;
   const root = apiBaseWithTrailingSlash();
+  const mobileRoot = mobileAppBaseWithTrailingSlash();
   if (localIp !== '' && offlineBasic) {
     const base = localIp.endsWith('/') ? localIp : `${localIp}/`;
     config = {
@@ -46,7 +53,7 @@ export function setRuntimeConfigFromWireRow(row: Record<string, unknown>): void 
   } else {
     config = {
       catalogUrl: `${root}service_go_v156/`,
-      orderUrl: `${root}service_go_v166/`,
+      orderUrl: `${mobileRoot}service_go_v166/`,
       pluginsUrl: `${root}main_plugins/`,
       authUrl: `${root}service_go_v166/`,
     };
@@ -55,9 +62,10 @@ export function setRuntimeConfigFromWireRow(row: Record<string, unknown>): void 
 
 export function resetRuntimeConfig(): void {
   const root = apiBaseWithTrailingSlash();
+  const mobileRoot = mobileAppBaseWithTrailingSlash();
   config = {
     catalogUrl: `${root}service_go_v156/`,
-    orderUrl: `${root}service_go_v166/`,
+    orderUrl: `${mobileRoot}service_go_v166/`,
     pluginsUrl: `${root}main_plugins/`,
     authUrl: `${root}service_go_v166/`,
   };

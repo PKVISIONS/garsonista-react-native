@@ -61,6 +61,9 @@ export function navigateToCardFailed(
   fields?: VivaCallbackFields,
   options?: {cart?: Cart | null; orderNumber?: number | null},
 ): void {
+  if (fields && isVivaCallbackSuccess(fields)) {
+    return;
+  }
   const cart = options?.cart ?? useCartStore.getState().cart;
   const orderNumber =
     options?.orderNumber ?? useFailedCardPaymentStore.getState().orderNumber;

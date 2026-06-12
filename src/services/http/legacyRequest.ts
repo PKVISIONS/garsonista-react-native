@@ -1,19 +1,16 @@
 import {applyCredentialsToFormData} from './client';
 import {recordLegacyPost} from './requestMetrics';
+import {
+  logFetchError,
+  logFetchRequest,
+  logFetchResponse,
+  readFormField,
+} from './apiLogger';
 
 const TIMEOUT_MS = 60_000;
 
 function readFormSelect(form: FormData): string | undefined {
-  const parts = (form as {_parts?: [string, unknown][]})._parts;
-  if (!Array.isArray(parts)) {
-    return undefined;
-  }
-  for (const [k, v] of parts) {
-    if (k === 'select' && typeof v === 'string') {
-      return v;
-    }
-  }
-  return undefined;
+  return readFormField(form, 'select');
 }
 
 /**
@@ -34,6 +31,7 @@ export async function legacyPostText(url: string, form: FormData): Promise<strin
   let recorded = false;
 
   try {
+    logFetchRequest('POST', url, form);
     const res = await fetch(url, {
       method: 'POST',
       body: form,
@@ -49,13 +47,7 @@ export async function legacyPostText(url: string, form: FormData): Promise<strin
       (typeof globalThis.performance?.now === 'function'
         ? globalThis.performance.now()
         : Date.now()) - t0;
-    if (__DEV__ && selectHint === 'insert_orders') {
-      const bodyPreview = text.length > 300 ? `${text.slice(0, 300)}...` : text;
-      console.log(
-        `[Garsonista HTTP] RESPONSE ${Math.round(ms)}ms select=${selectHint} host=${new URL(url).host} bodyPreview=`,
-        bodyPreview,
-      );
-    }
+    logFetchResponse('POST', url, res.status, t0, text);
     if (!res.ok) {
       recordLegacyPost(url, selectHint, ms, false);
       recorded = true;
@@ -68,6 +60,7 @@ export async function legacyPostText(url: string, form: FormData): Promise<strin
     recorded = true;
     return text;
   } catch (e) {
+    logFetchError('POST', url, t0, e);
     if (!recorded) {
       const ms =
         (typeof globalThis.performance?.now === 'function'

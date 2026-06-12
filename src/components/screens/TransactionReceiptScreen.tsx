@@ -20,10 +20,11 @@ import {
   View,
 } from 'react-native';
 import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
+import {DEBUG_LOGS_ENABLED} from '@constants/config';
 import {ROUTES} from '@constants/routes';
 import type {RootStackParamList} from '@navigation/types';
 import {enqueueOfflineCart, submitCartOnline} from '@services/orderService';
-import {sendVivaFinal} from '@services/paymentService';
+import {revertSaleKiosk, sendVivaFinal} from '@services/paymentService';
 import {printFinalReceipt} from '@services/printing/printerService';
 import {useAuthStore, useCartStore, useCatalogStore, usePaymentStore} from '@store';
 import {useNetworkStatus} from '@hooks/useNetworkStatus';
@@ -40,6 +41,7 @@ import {KioskTopBrandLogo} from '../KioskTopBrandLogo';
 import {buildVivaPaymentUri} from '@services/payment/vivaDeepLink';
 import {captureFailedCardAttempt} from '@services/payment/cardPaymentRecovery';
 import {navigateToCardFailed} from '@services/payment/vivaFlow';
+import {vivaLog} from '@services/payment/vivaLogger';
 import {Linking} from 'react-native';
 import {kioskLogoImageUri, remoteUriSource} from '@utils/productImage';
 import {translate} from '../../stores/Localization/LocalizationStore';
@@ -124,7 +126,7 @@ function parseAadePayload(raw: string | null | undefined):
       const digest = String(row.digest ?? row.aadeProviderSignatureData ?? '').trim();
       const signature = String(row.signature ?? row.aadeProviderSignature ?? '').trim();
       if (id && digest && signature) {
-        if (__DEV__) {
+        if (DEBUG_LOGS_ENABLED) {
           console.log(
             `[VivaFlow] parseAadePayload id=${id} digestLen=${digest.length} signatureLen=${signature.length} rawPreview=${String(raw).slice(
               0,
@@ -173,18 +175,26 @@ function parseLegacyVivaSignatureData(raw: string | null | undefined): {
   try {
     const parsed = unwrapJson(JSON.parse(raw)) as Record<string, unknown>;
     const roots: Record<string, unknown>[] = [parsed];
-    const nested = parsed.signature_data;
+    const nested = unwrapJson(parsed.signature_data);
     if (nested && typeof nested === 'object') {
       roots.push(nested as Record<string, unknown>);
     }
     for (const root of roots) {
-      const hasVivaFiscalProvider = Boolean(root.viva_fiscal_provider);
-      const fiscalData = String(root.fiscal_data ?? root.fiscalData ?? '').trim();
+      const hasVivaFiscalProvider =
+        Object.prototype.hasOwnProperty.call(root, 'viva_fiscal_provider') ||
+        Object.prototype.hasOwnProperty.call(root, 'vivaFiscalProvider');
+      const fiscalData = String(
+        root.fiscal_data ??
+          root.fiscalData ??
+          root.fiscalisationData ??
+          root.fiscalisationSigningDetails ??
+          '',
+      ).trim();
       const digest = String(root.digest ?? '').trim();
       const signature = String(root.signature ?? '').trim();
       const id = String(root.id ?? root.idtaxdocument ?? '').trim();
       if (hasVivaFiscalProvider || fiscalData || digest || signature || id) {
-        if (__DEV__) {
+        if (DEBUG_LOGS_ENABLED) {
           console.log(
             `[VivaFlow] parseLegacyVivaSignatureData hasVivaFiscalProvider=${String(
               hasVivaFiscalProvider,
@@ -217,6 +227,8 @@ export function TransactionReceiptScreen({navigation, route}: Props): React.JSX.
   const pendingOrderNumber = usePaymentStore(s => s.pendingOrderNumber);
   const pendingReceiptOrderNumber = usePaymentStore(s => s.pendingReceiptOrderNumber);
   const setPendingReceiptOrderNumber = usePaymentStore(s => s.setPendingReceiptOrderNumber);
+  const setVivaRequest = usePaymentStore(s => s.setVivaRequest);
+  const setVivaResponse = usePaymentStore(s => s.setVivaResponse);
   const online = useNetworkStatus();
 
   const brandLogoUri = useMemo(() => kioskLogoImageUri(wireRow), [wireRow]);
@@ -371,7 +383,7 @@ export function TransactionReceiptScreen({navigation, route}: Props): React.JSX.
             submitted.fiscalDoc?.signatureData ??
             submitted.fiscalDoc?.fiscalData ??
             invoiceRaw;
-          if (__DEV__) {
+          if (DEBUG_LOGS_ENABLED) {
             console.log(
               `[VivaFlow] TransactionReceipt fiscalDoc invoiceUrlLen=${invoiceRaw?.length ?? 0} escposLen=${submitted.fiscalDoc?.escpos?.length ?? 0} fiscalDataLen=${submitted.fiscalDoc?.fiscalData?.length ?? 0} signatureDataLen=${submitted.fiscalDoc?.signatureData?.length ?? 0} backendReceiptPayloadLen=${backendReceiptPayload?.length ?? 0}`,
             );
@@ -397,14 +409,31 @@ export function TransactionReceiptScreen({navigation, route}: Props): React.JSX.
             resolveFiscalisationDataFromInvoiceUrl(backendReceiptPayload) ??
             submitted.fiscalDoc?.fiscalData ??
             undefined;
-          if (!legacySignatureData?.hasVivaFiscalProvider) {
+          const hasVivaFiscalProviderPayload = Boolean(
+            legacySignatureData?.hasVivaFiscalProvider && fiscalisationData?.trim(),
+          );
+          if (!hasVivaFiscalProviderPayload) {
             aadePayload =
               parseAadePayload(submitted.fiscalDoc?.signatureData) ??
               parseAadePayload(invoiceRaw) ??
               parseAadePayload(backendReceiptPayload) ??
               aadePayload;
           }
-          if (__DEV__) {
+          if (
+            cart.type === 'takeaway' &&
+            !hasVivaFiscalProviderPayload &&
+            !aadePayload &&
+            legacySignatureData?.id &&
+            legacySignatureData.digest &&
+            legacySignatureData.signature
+          ) {
+            aadePayload = {
+              id: legacySignatureData.id,
+              digest: legacySignatureData.digest,
+              signature: legacySignatureData.signature,
+            };
+          }
+          if (DEBUG_LOGS_ENABLED) {
             const rawInvoice = submitted.fiscalDoc?.invoiceUrl ?? '';
             console.log(
                 `[VivaFlow] TransactionReceipt insert_orders done hasFiscal=${Boolean(
@@ -447,13 +476,13 @@ export function TransactionReceiptScreen({navigation, route}: Props): React.JSX.
         }
         if (paymentMethod === 'card' && !skipCardLaunch) {
           if (!fiscalisationData && !aadePayload) {
-            if (__DEV__) {
+            if (DEBUG_LOGS_ENABLED) {
               console.log(
                 '[VivaFlow] TransactionReceipt card path: launching without fiscalisationData',
               );
             }
           }
-          if (__DEV__) {
+          if (DEBUG_LOGS_ENABLED) {
             console.log(
               `[VivaFlow] TransactionReceipt launching Viva from insert_orders amount=${cart.items
                 .reduce((sum, item) => sum + item.lineTotal, 0)
@@ -479,7 +508,25 @@ export function TransactionReceiptScreen({navigation, route}: Props): React.JSX.
                 }
                 : undefined,
           });
-          if (__DEV__) {
+          setVivaRequest(vivaUri);
+          setVivaResponse(null);
+          vivaLog('TransactionReceipt intent ready', {
+            ticket,
+            cartType: cart.type,
+            tableId: cart.tableId,
+            amountEuros: cart.items.reduce((sum, item) => sum + item.lineTotal, 0),
+            clientTransactionId: vivaClientTransactionId,
+            hasAade: Boolean(aadePayload?.id && aadePayload?.digest && aadePayload?.signature),
+            hasFiscalisationData: Boolean(fiscalisationData?.trim()),
+            fiscalisationDataLength: fiscalisationData?.length ?? 0,
+            aadeId: aadePayload?.id ?? '',
+            aadeDigest: aadePayload?.digest ?? '',
+            aadeSignature: aadePayload?.signature ?? '',
+            includeIsv,
+            accountType,
+            uri: vivaUri,
+          });
+          if (DEBUG_LOGS_ENABLED) {
             console.log(
               `[VivaFlow] TransactionReceipt vivaUri inputs hasAade=${Boolean(
                 aadePayload?.id && aadePayload?.digest && aadePayload?.signature,
@@ -493,6 +540,10 @@ export function TransactionReceiptScreen({navigation, route}: Props): React.JSX.
           }
           try {
             const canOpen = await Linking.canOpenURL(vivaUri);
+            vivaLog('TransactionReceipt canOpenURL result', {
+              canOpen,
+              uri: vivaUri,
+            });
             if (!canOpen) {
               if (!cancelled) {
                 setSubmitting(false);
@@ -500,12 +551,37 @@ export function TransactionReceiptScreen({navigation, route}: Props): React.JSX.
               }
               return;
             }
+            if (aadePayload?.id) {
+              if (DEBUG_LOGS_ENABLED) {
+                console.log(
+                  `[VivaFlow] TransactionReceipt pre-viva revert_sale_kiosk_ajax idtaxdocument=${aadePayload.id}`,
+                );
+              }
+              vivaLog('TransactionReceipt pre-viva revert_sale_kiosk_ajax start', {
+                idtaxdocument: aadePayload.id,
+                lastVivaRequest: vivaUri,
+                lastVivaResponse: 'no response yet',
+              });
+              await revertSaleKiosk(aadePayload.id, {
+                lastVivaRequest: vivaUri,
+                lastVivaResponse: 'no response yet',
+              });
+              vivaLog('TransactionReceipt pre-viva revert_sale_kiosk_ajax done', {
+                idtaxdocument: aadePayload.id,
+              });
+            }
+            vivaLog('TransactionReceipt Linking.openURL start', {uri: vivaUri});
             await Linking.openURL(vivaUri);
-            if (__DEV__) {
+            vivaLog('TransactionReceipt Linking.openURL resolved', {uri: vivaUri});
+            if (DEBUG_LOGS_ENABLED) {
               console.log('[VivaFlow] TransactionReceipt Linking.openURL resolved');
             }
           } catch (e) {
-            if (__DEV__) {
+            vivaLog('TransactionReceipt Viva launch error', {
+              message: (e as Error)?.message ?? String(e),
+              uri: vivaUri,
+            });
+            if (DEBUG_LOGS_ENABLED) {
               console.log(
                 `[VivaFlow] TransactionReceipt Linking.openURL failed msg=${(e as Error)?.message ?? String(
                   e,
@@ -539,7 +615,7 @@ export function TransactionReceiptScreen({navigation, route}: Props): React.JSX.
             );
             const rawVivaTransId = String(clientTransactionId ?? ticket);
             const vivaTransIdForFinal = rawVivaTransId.replace(/^AUTX/, '');
-            if (__DEV__) {
+            if (DEBUG_LOGS_ENABLED) {
               console.log(
                 `[VivaFlow] TransactionReceipt send_viva_final ids raw=${rawVivaTransId} stripped=${vivaTransIdForFinal} aadeTxId=${
                   aadeTransactionId ?? transactionId ?? 'none'
@@ -556,7 +632,7 @@ export function TransactionReceiptScreen({navigation, route}: Props): React.JSX.
               password: ctx.password,
               notaxdocsToLocalPrinter: 0,
             });
-            if (__DEV__) {
+            if (DEBUG_LOGS_ENABLED) {
               console.log(
                 `[VivaFlow] TransactionReceipt send_viva_final response len=${vivaFinalResponse.length}`,
               );
@@ -584,7 +660,7 @@ export function TransactionReceiptScreen({navigation, route}: Props): React.JSX.
                 if (finalQr) {
                   qrCodeUrl = finalQr;
                 }
-                if (__DEV__) {
+                if (DEBUG_LOGS_ENABLED) {
                   console.log(
                     `[VivaFlow] TransactionReceipt send_viva_final invoiceUrl len=${finalInvoiceUrl.length} qr=${
                       finalQr ?? 'none'
@@ -595,7 +671,7 @@ export function TransactionReceiptScreen({navigation, route}: Props): React.JSX.
             } catch {
               /* keep fallback payloads */
             }
-            if (__DEV__) {
+            if (DEBUG_LOGS_ENABLED) {
               console.log(
                 `[VivaFlow] TransactionReceipt signingDetailsLen=${
                   route.params?.fiscalisationSigningDetails?.length ?? 0
@@ -613,7 +689,7 @@ export function TransactionReceiptScreen({navigation, route}: Props): React.JSX.
               parsedFiscalSigning?.fiskaltrustQr?.trim() ||
               parsedFiscalSigning?.vivaQr?.trim() ||
               qrCodeUrl?.trim();
-            if (__DEV__) {
+            if (DEBUG_LOGS_ENABLED) {
               console.log(
                 `[VivaFlow] TransactionReceipt QR source=${qrCodeUrl ?? 'none'} fiskaltrust=${
                   parsedFiscalSigning?.fiskaltrustQr?.trim() ?? 'none'
@@ -644,7 +720,7 @@ export function TransactionReceiptScreen({navigation, route}: Props): React.JSX.
               setTimeout(() => resolve(null), PRINT_TIMEOUT_MS),
             );
             const printed = await Promise.race([printPromise, timeoutPromise]);
-            if (!cancelled && !printed && __DEV__) {
+            if (!cancelled && !printed && DEBUG_LOGS_ENABLED) {
               console.log('[VivaFlow] TransactionReceipt print timeout (non-blocking)');
             }
           } catch {
@@ -668,7 +744,7 @@ export function TransactionReceiptScreen({navigation, route}: Props): React.JSX.
             const parsedFiscalSigning = parseVivaFiscalSigningDetails(
               route.params?.fiscalisationSigningDetails ?? fiscalisationData ?? invoiceRaw,
             );
-            if (__DEV__) {
+            if (DEBUG_LOGS_ENABLED) {
               console.log(
                 `[VivaFlow] TransactionReceipt signingDetailsLen=${
                   route.params?.fiscalisationSigningDetails?.length ?? 0
@@ -686,7 +762,7 @@ export function TransactionReceiptScreen({navigation, route}: Props): React.JSX.
               parsedFiscalSigning?.fiskaltrustQr?.trim() ||
               parsedFiscalSigning?.vivaQr?.trim() ||
               qrCodeUrl?.trim();
-            if (__DEV__) {
+            if (DEBUG_LOGS_ENABLED) {
               console.log(
                 `[VivaFlow] TransactionReceipt QR source=${qrCodeUrl ?? 'none'} fiskaltrust=${
                   parsedFiscalSigning?.fiskaltrustQr?.trim() ?? 'none'
@@ -717,7 +793,7 @@ export function TransactionReceiptScreen({navigation, route}: Props): React.JSX.
               setTimeout(() => resolve(null), PRINT_TIMEOUT_MS),
             );
             const printed = await Promise.race([printPromise, timeoutPromise]);
-            if (!cancelled && !printed && __DEV__) {
+            if (!cancelled && !printed && DEBUG_LOGS_ENABLED) {
               console.log('[VivaFlow] TransactionReceipt print timeout (non-blocking)');
             }
           } catch {
@@ -765,6 +841,8 @@ export function TransactionReceiptScreen({navigation, route}: Props): React.JSX.
     skipCardLaunch,
     pendingOrderNumber,
     setPendingReceiptOrderNumber,
+    setVivaRequest,
+    setVivaResponse,
     navigation,
   ]);
 

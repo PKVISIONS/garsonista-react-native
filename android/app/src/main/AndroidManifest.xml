@@ -39,6 +39,7 @@
             <category android:name="android.intent.category.DEFAULT" />
             <category android:name="android.intent.category.BROWSABLE" />
             <data android:scheme="garsonista_offline" android:host="viva-return" />
+            <data android:scheme="garsonista_offline" android:host="https" />
         </intent-filter>
       </activity>
     </application>

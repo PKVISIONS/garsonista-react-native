@@ -3,7 +3,9 @@ import {
   Modal,
   StyleSheet,
   Text,
+  type StyleProp,
   View,
+  type ViewStyle,
 } from 'react-native';
 import {observer} from 'mobx-react-lite';
 import {KioskPressable as Pressable} from './KioskPressable';
@@ -18,11 +20,13 @@ function kioskLanguageShortLabel(isoCode: string): string {
 }
 
 type Props = {
-  style?: object;
+  style?: StyleProp<ViewStyle>;
+  compact?: boolean;
 };
 
 export const LanguageSelector = observer(function LanguageSelector({
   style,
+  compact = false,
 }: Props): React.JSX.Element {
   const [open, setOpen] = useState(false);
   const code = localizationStore.currentLanguageCode;
@@ -36,8 +40,12 @@ export const LanguageSelector = observer(function LanguageSelector({
         accessibilityRole="button"
         accessibilityLabel={translate('kiosk.lang.a11y')}
         onPress={() => setOpen(true)}
-        style={({pressed}) => [styles.trigger, pressed && styles.pressed]}>
-        <Text style={styles.triggerText}>
+        style={({pressed}) => [
+          styles.trigger,
+          compact && styles.triggerCompact,
+          pressed && styles.pressed,
+        ]}>
+        <Text style={[styles.triggerText, compact && styles.triggerTextCompact]}>
           {localizationStore.supportedLanguages.find(l => l.code === code)
             ?.label ?? '🌐'}{' '}
           {kioskLanguageShortLabel(code)}
@@ -110,6 +118,16 @@ const styles = StyleSheet.create({
     color: theme.color.textSecondary,
     textAlign: 'center',
   },
+  triggerCompact: {
+    minWidth: 84,
+    minHeight: 48,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+  },
+  triggerTextCompact: {
+    fontSize: 16,
+  },
   pressed: {opacity: 0.88},
   modalRoot: {
     flex: 1,
@@ -118,7 +136,7 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0, 191, 255, 0.45)',
+    backgroundColor: 'rgba(31, 31, 31, 0.58)',
   },
   sheetWrap: {
     ...StyleSheet.absoluteFill,

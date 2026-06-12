@@ -14,7 +14,6 @@ import {ROUTES} from '@constants/routes';
 import type {RootStackParamList} from '@navigation/types';
 import {useAuthStore} from '@store';
 import {theme} from '@theme/kiosk';
-import {LanguageSelector} from '../LanguageSelector';
 import {translate} from '../../stores/Localization/LocalizationStore';
 
 /**
@@ -44,7 +43,6 @@ export function PlaceOrderScreen(): React.JSX.Element {
           accessibilityRole="button"
           accessibilityLabel={translate('kiosk.placeOrderA11y')}>
           <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-            <LanguageSelector style={styles.langRow} />
             <View style={styles.flexSpacer} />
             <View style={styles.ctaBar}>
               <Pressable
@@ -84,10 +82,6 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: 'transparent',
-  },
-  langRow: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
   },
   flexSpacer: {
     flex: 1,

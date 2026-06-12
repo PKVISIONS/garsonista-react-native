@@ -1,5 +1,5 @@
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   Alert,
   Image,
@@ -11,11 +11,17 @@ import {
   Text,
   View,
 } from 'react-native';
-import Constants from 'expo-constants';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import {APP_VERSION} from '@constants/config';
 import {ROUTES} from '@constants/routes';
 import type {RootStackParamList} from '@navigation/types';
-import {useAuthStore, useCartStore, useMenuPreloadStore} from '@store';
+import {
+  useAuthStore,
+  useCartStore,
+  useFailedCardPaymentStore,
+  useMenuPreloadStore,
+  usePaymentStore,
+} from '@store';
 import {theme} from '@theme/kiosk';
 import {KioskPressable as Pressable} from '../KioskPressable';
 import {translate} from '../../stores/Localization/LocalizationStore';
@@ -35,12 +41,47 @@ type PrinterStatus = {
 };
 
 type AdminActionVariant = 'secondary' | 'warning' | 'danger';
+type AdminLogFilter = 'all' | 'print' | 'viva';
 
 const cashIcon = require('../../assets/images/kiosk-payment-coins.png');
 const cardIcon = require('../../assets/images/kiosk-payment-card.png');
 const cartIcon = require('../../assets/images/cart-icon.png');
 const MAX_PRINT_LOGS = 80;
 const printerOptions: PreferredPrinterKind[] = ['sunmi', 'dantsu'];
+const logFilters: Array<{key: AdminLogFilter; label: string}> = [
+  {key: 'all', label: 'All'},
+  {key: 'print', label: 'Print Logs'},
+  {key: 'viva', label: 'Viva Logs'},
+];
+
+function truncateMiddle(value: string, maxLength = 180): string {
+  if (value.length <= maxLength) {
+    return value;
+  }
+  const edge = Math.floor((maxLength - 3) / 2);
+  return `${value.slice(0, edge)}...${value.slice(value.length - edge)}`;
+}
+
+function redactVivaDeepLink(value: string | null): string {
+  if (!value) {
+    return '';
+  }
+  return truncateMiddle(
+    value
+      .replace(/(ISV_clientSecret=)[^&]+/g, '$1***')
+      .replace(/(aadeProviderSignature=)[^&]+/g, '$1***')
+      .replace(/(aadeProviderSignatureData=)[^&]+/g, '$1***'),
+  );
+}
+
+function cartTotal(cartValue: Cart | null): string {
+  if (!cartValue) {
+    return '';
+  }
+  return cartValue.items
+    .reduce((sum, item) => sum + item.lineTotal, 0)
+    .toFixed(2);
+}
 
 function displayValue(value: unknown): string {
   if (value == null || value === '') {
@@ -61,6 +102,16 @@ export function AdminSettingsScreen({navigation}: Props): React.JSX.Element {
   const logout = useAuthStore(s => s.logout);
   const cart = useCartStore(s => s.cart);
   const clearCart = useCartStore(s => s.clear);
+  const vivaPhase = usePaymentStore(s => s.phase);
+  const vivaLastError = usePaymentStore(s => s.lastError);
+  const vivaLastDeepLink = usePaymentStore(s => s.lastDeepLink);
+  const lastVivaRequest = usePaymentStore(s => s.lastVivaRequest);
+  const lastVivaResponse = usePaymentStore(s => s.lastVivaResponse);
+  const vivaPendingOrderNumber = usePaymentStore(s => s.pendingOrderNumber);
+  const vivaPendingReceiptOrderNumber = usePaymentStore(s => s.pendingReceiptOrderNumber);
+  const failedCardCart = useFailedCardPaymentStore(s => s.cartSnapshot);
+  const failedCardOrderNumber = useFailedCardPaymentStore(s => s.orderNumber);
+  const failedCardIdtaxdocument = useFailedCardPaymentStore(s => s.idtaxdocument);
   const menuReady = useMenuPreloadStore(s => s.ready);
   const tableIds = useMenuPreloadStore(s => s.tableIds);
   const activeCategoryId = useMenuPreloadStore(s => s.activeCategoryId);
@@ -71,9 +122,65 @@ export function AdminSettingsScreen({navigation}: Props): React.JSX.Element {
   const [printingTest, setPrintingTest] = useState<'cash' | 'card' | null>(null);
   const [refreshingLogin, setRefreshingLogin] = useState(false);
   const [printLogs, setPrintLogs] = useState<string[]>([]);
+  const [activeLogFilter, setActiveLogFilter] = useState<AdminLogFilter>('all');
   const [preferredPrinter, setPreferredPrinterState] = useState<PreferredPrinterKind>(() => getPreferredPrinterKind());
   const [printerDropdownOpen, setPrinterDropdownOpen] = useState(false);
-  const appVersion = Constants.expoConfig?.version ?? '0.0.0';
+  const appVersion = APP_VERSION;
+  const vivaTransactionLogs = useMemo(() => {
+    const accountType = Number(wireRow?.paroxos_customers_id ?? 0) === 50
+      ? 'demo'
+      : 'production';
+    const hasTidNsp = String(wireRow?.tid_nsp ?? '').trim() !== '';
+    const failedCartItems = failedCardCart?.items.length ?? 0;
+    const failedCartType = failedCardCart?.type ?? '';
+    const failedCartTable = failedCardCart?.tableId ?? '';
+    const failedCartTotal = cartTotal(failedCardCart);
+    return [
+      `phase=${vivaPhase}`,
+      `lastError=${displayValue(vivaLastError)}`,
+      `pendingOrder=${displayValue(vivaPendingOrderNumber)}`,
+      `pendingReceiptOrder=${displayValue(vivaPendingReceiptOrderNumber)}`,
+      `failedOrder=${displayValue(failedCardOrderNumber)}`,
+      `idtaxdocument=${displayValue(failedCardIdtaxdocument)}`,
+      `failedCart type=${displayValue(failedCartType)} table=${displayValue(
+        failedCartTable,
+      )} items=${failedCartItems} total=${displayValue(failedCartTotal)}`,
+      `account=${accountType} tid_nsp=${yesNo(hasTidNsp)} idstore_pos=${displayValue(
+        wireRow?.idstore_pos,
+      )} aade_branchcode=${displayValue(wireRow?.aade_branchcode)}`,
+      `flags ismellon=${displayValue(wireRow?.ismellon)} isvivacloud=${displayValue(
+        wireRow?.isvivacloud,
+      )} novus_user=${displayValue(wireRow?.novus_user)} auto_receipt=${displayValue(
+        wireRow?.auto_receipt,
+      )}`,
+      `lastDeepLink=${displayValue(redactVivaDeepLink(vivaLastDeepLink))}`,
+      `lastVivaRequest=${displayValue(redactVivaDeepLink(lastVivaRequest))}`,
+      `lastVivaResponse=${displayValue(redactVivaDeepLink(lastVivaResponse))}`,
+    ];
+  }, [
+    failedCardCart,
+    failedCardIdtaxdocument,
+    failedCardOrderNumber,
+    lastVivaRequest,
+    lastVivaResponse,
+    vivaLastDeepLink,
+    vivaLastError,
+    vivaPendingOrderNumber,
+    vivaPendingReceiptOrderNumber,
+    vivaPhase,
+    wireRow,
+  ]);
+  const visibleLogs = useMemo(() => {
+    const vivaLines = vivaTransactionLogs.map(line => `[Viva] ${line}`);
+    const printLines = printLogs.map(line => `[Print] ${line}`);
+    if (activeLogFilter === 'viva') {
+      return vivaLines;
+    }
+    if (activeLogFilter === 'print') {
+      return printLines;
+    }
+    return [...vivaLines, ...printLines];
+  }, [activeLogFilter, printLogs, vivaTransactionLogs]);
 
   const appendPrintLog = useCallback((message: string) => {
     const timestamp = new Date().toLocaleTimeString('el-GR', {
@@ -338,20 +445,39 @@ export function AdminSettingsScreen({navigation}: Props): React.JSX.Element {
 
         <View style={styles.section}>
           <View style={styles.logHeader}>
-            <Text style={styles.sectionTitle}>Print logs</Text>
+            <Text style={styles.sectionTitle}>Logs</Text>
             <Pressable style={styles.clearLogsButton} onPress={() => setPrintLogs([])}>
               <Text style={styles.clearLogsText}>Clear</Text>
             </Pressable>
           </View>
+          <View style={styles.logFilterRow}>
+            {logFilters.map(filter => (
+              <Pressable
+                key={filter.key}
+                style={[
+                  styles.logFilterButton,
+                  activeLogFilter === filter.key && styles.logFilterButtonActive,
+                ]}
+                onPress={() => setActiveLogFilter(filter.key)}>
+                <Text
+                  style={[
+                    styles.logFilterText,
+                    activeLogFilter === filter.key && styles.logFilterTextActive,
+                  ]}>
+                  {filter.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
           <View style={styles.logPanel}>
-            {printLogs.length === 0 ? (
+            {visibleLogs.length === 0 ? (
               <Text style={styles.logEmpty}>No print logs yet.</Text>
             ) : (
               <ScrollView
                 style={styles.logScroll}
                 nestedScrollEnabled
                 showsVerticalScrollIndicator>
-                {printLogs.map((line, index) => (
+                {visibleLogs.map((line, index) => (
                   <Text key={`${index}-${line}`} style={styles.logLine}>
                     {line}
                   </Text>
@@ -628,6 +754,33 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     color: theme.color.textPrimary,
+  },
+  logFilterRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 10,
+  },
+  logFilterButton: {
+    minHeight: 34,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.color.bgPrimary,
+    borderWidth: 1,
+    borderColor: theme.color.border,
+  },
+  logFilterButtonActive: {
+    backgroundColor: theme.color.accentPrimary,
+    borderColor: theme.color.accentPrimary,
+  },
+  logFilterText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: theme.color.textSecondary,
+  },
+  logFilterTextActive: {
+    color: theme.color.onAccent,
   },
   logPanel: {
     minHeight: 160,

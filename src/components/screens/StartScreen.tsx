@@ -16,7 +16,6 @@ import {useAuthStore} from '@store';
 import {theme} from '@theme/kiosk';
 import {kioskSplashImageUri} from '@utils/productImage';
 import {logRemoteImageDiagnostics} from '@utils/imageDebug';
-import {LanguageSelector} from '../LanguageSelector';
 import {translate} from '../../stores/Localization/LocalizationStore';
 
 /**
@@ -38,7 +37,6 @@ export function StartScreen(): React.JSX.Element {
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       <KioskSplashLayout wireRow={wireRow} logTag="Start" style={styles.image}>
         <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-          <LanguageSelector style={styles.langRow} />
           <View style={styles.flexSpacer} />
           <View style={styles.ctaBar}>
             <Pressable
@@ -72,10 +70,6 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: 'transparent',
-  },
-  langRow: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
   },
   flexSpacer: {
     flex: 1,

@@ -1,6 +1,7 @@
 import type {Cart, CartItem} from '@models/cart';
 import type {Order, OrderLine} from '@models/order';
 import type {PaymentSummary} from '@models/payment';
+import {DEBUG_LOGS_ENABLED} from '@constants/config';
 import {createPosClientUnid} from '@utils/posClientUnid';
 import {parseJsonArray} from './jsonParse';
 
@@ -21,6 +22,7 @@ export type BuildWireContext = {
   isvivacloud: number;
   tid_nsp: string;
   always_receipt_final: number;
+  notaxdocs_tolocal_printer: number;
   novus_user: number;
   auto_receipt: number;
   headaa: number;
@@ -91,13 +93,14 @@ export function buildWireOrdersFromCart(
       aver: 1,
       isupd: 0,
       isiris: paymentMethod === 'iris' ? 1 : 0,
-      iscredit: paymentMethod === 'card' ? 1 : 0,
-      isprepaid: cardSignatureMode ? 0 : item.quantity,
+      iscredit: paymentMethod === 'card' && !cardSignatureMode ? 1 : 0,
+      isprepaid: item.quantity,
       auto_receipt: autoReceiptForPayment,
       ispaid: 0,
       isgift: 0,
       iscancelled: 0,
       iscompleted: 0,
+      print_receipt: 1,
       precash_val: cashAmount > 0 ? Number(((cashAmount / Math.max(totalAmount, 1)) * item.lineTotal).toFixed(2)) : 0,
       precard_val:
         cardSignatureMode
@@ -124,7 +127,7 @@ export function buildWireOrdersFromCart(
       bank_val: 0,
       carthead_comments: cart.comment,
       islocal: ctx.localIp !== '' && ctx.semiLocal === 0 ? 1 : 0,
-      novus_user: ctx.novus_user,
+      novus_user: 1,
     };
   });
 }
@@ -215,7 +218,7 @@ export function mapInsertOrdersResponse(raw: unknown, cart: Cart): Order {
   const hasFiscalDoc = Boolean(
     invoiceUrl.trim() || escpos.trim() || fiscalData.trim() || signatureData.trim(),
   );
-  if (__DEV__) {
+  if (DEBUG_LOGS_ENABLED) {
     const signatureRow =
       signatureDataResult.rowIndex >= 0 ? rows[signatureDataResult.rowIndex] : first;
     const signatureObj =

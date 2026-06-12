@@ -17,6 +17,8 @@ import {
   Text,
   View,
 } from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {DEBUG_LOGS_ENABLED} from '@constants/config';
 import {ROUTES} from '@constants/routes';
 import {useAdminAccessStore, useAuthStore, useMenuPreloadStore, usePaymentStore} from '@store';
 import {useFailedCardPaymentStore} from '../stores/Payment/FailedCardPaymentStore';
@@ -27,6 +29,7 @@ import {
   isVivaCallbackUrl,
   navigateToCardFailed,
 } from '@services/payment/vivaFlow';
+import {vivaLog} from '@services/payment/vivaLogger';
 import {useSubscriptionQuery} from '@hooks/useSubscriptionQuery';
 import {useOfflineDrain} from '@hooks/useOfflineDrain';
 import {LoginScreen} from '@screens/LoginScreen';
@@ -46,6 +49,7 @@ import {TaxCustomerScreen} from '@screens/TaxCustomerScreen';
 import {PrinterErrorScreen} from '@screens/PrinterErrorScreen';
 import {AdminSettingsScreen} from '@screens/AdminSettingsScreen';
 import {navigationTheme, theme} from '@theme/kiosk';
+import {LanguageSelector} from '../components/LanguageSelector';
 import {KioskIdleActivityProvider} from '../context/KioskIdleActivityContext';
 import {useKioskIdleTimeout} from '@hooks/useKioskIdleTimeout';
 import {linking} from './linking';
@@ -58,25 +62,46 @@ function DeepLinkBridge(): React.JSX.Element {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const setPhase = usePaymentStore(s => s.setPhase);
   const setDeepLink = usePaymentStore(s => s.setDeepLink);
+  const setVivaResponse = usePaymentStore(s => s.setVivaResponse);
 
   useEffect(() => {
     const handleUrl = (url: string) => {
-      if (__DEV__) {
+      vivaLog('Callback URL received', {url, length: url.length});
+      if (DEBUG_LOGS_ENABLED) {
         console.log(`[VivaFlow] Callback URL received: ${url}`);
       }
       if (!isVivaCallbackUrl(url)) {
-        if (__DEV__) {
+        vivaLog('Ignoring non-Viva deep link', {url});
+        if (DEBUG_LOGS_ENABLED) {
           console.log('[VivaFlow] Ignoring non-Viva deep link');
         }
         return;
       }
       setDeepLink(url);
-      if (__DEV__) {
+      if (DEBUG_LOGS_ENABLED) {
         console.log(`[VivaFlow] Raw Viva callback url len=${url.length}`);
         console.log(`[VivaFlow] Raw Viva callback url preview=${url.slice(0, 240)}`);
       }
       const fields = parseVivaCallbackUrl(url);
-      if (__DEV__) {
+      vivaLog('Callback parsed fields', {
+        url,
+        status: fields.status ?? '',
+        message: fields.message ?? '',
+        action: fields.action ?? '',
+        clientTransactionId: fields.clientTransactionId ?? '',
+        transactionId: fields.transactionId ?? '',
+        transactionEventId: fields.transactionEventId ?? '',
+        amount: fields.amount ?? '',
+        tipAmount: fields.tipAmount ?? '',
+        cardType: fields.cardType ?? '',
+        accountNumber: fields.accountNumber ?? '',
+        aadeTransactionId: fields.aadeTransactionId ?? '',
+        paymentMethod: fields.paymentMethod ?? '',
+        transactionDate: fields.transactionDate ?? '',
+        fiscalisationSigningDetails: fields.fiscalisationSigningDetails ?? '',
+      });
+      setVivaResponse(JSON.stringify({url, fields}));
+      if (DEBUG_LOGS_ENABLED) {
         console.log(
           `[VivaFlow] Callback parsed status=${fields.status ?? 'null'} action=${fields.action ?? 'null'} txId=${fields.transactionId ?? 'null'} clientTxId=${fields.clientTransactionId ?? 'null'} eventId=${fields.transactionEventId ?? 'null'} amount=${fields.amount ?? 'null'} aadeTxId=${fields.aadeTransactionId ?? 'null'} fiscalLen=${fields.fiscalisationSigningDetails?.length ?? 0} message=${fields.message ?? 'null'}`,
         );
@@ -87,7 +112,12 @@ function DeepLinkBridge(): React.JSX.Element {
         }
       }
       if (isVivaCallbackSuccess(fields)) {
-        if (__DEV__) {
+        vivaLog('Callback decision success', {
+          clientTransactionId: fields.clientTransactionId ?? '',
+          transactionId: fields.transactionId ?? '',
+          aadeTransactionId: fields.aadeTransactionId ?? '',
+        });
+        if (DEBUG_LOGS_ENABLED) {
           console.log(
             '[VivaFlow] Callback decision: success -> navigate TransactionReceipt(card)',
           );
@@ -109,7 +139,12 @@ function DeepLinkBridge(): React.JSX.Element {
         });
         return;
       }
-      if (__DEV__) {
+      vivaLog('Callback decision failure', {
+        clientTransactionId: fields.clientTransactionId ?? '',
+        status: fields.status ?? '',
+        message: fields.message ?? '',
+      });
+      if (DEBUG_LOGS_ENABLED) {
         console.log('[VivaFlow] Callback decision: error -> navigate CardFailed');
       }
       setPhase('failed');
@@ -117,7 +152,8 @@ function DeepLinkBridge(): React.JSX.Element {
     };
 
     const sub = Linking.addEventListener('url', ({url}) => {
-      if (__DEV__) {
+      vivaLog('Linking event url fired', {url});
+      if (DEBUG_LOGS_ENABLED) {
         console.log('[VivaFlow] Linking event url fired');
       }
       handleUrl(url);
@@ -125,17 +161,21 @@ function DeepLinkBridge(): React.JSX.Element {
 
     void Linking.getInitialURL().then(url => {
       if (url) {
-        if (__DEV__) {
+        vivaLog('getInitialURL returned URL', {url});
+        if (DEBUG_LOGS_ENABLED) {
           console.log('[VivaFlow] getInitialURL returned callback URL');
         }
         handleUrl(url);
-      } else if (__DEV__) {
-        console.log('[VivaFlow] getInitialURL returned empty');
+      } else {
+        vivaLog('getInitialURL returned empty');
+        if (DEBUG_LOGS_ENABLED) {
+          console.log('[VivaFlow] getInitialURL returned empty');
+        }
       }
     });
 
     return () => sub.remove();
-  }, [navigation, setDeepLink, setPhase]);
+  }, [navigation, setDeepLink, setPhase, setVivaResponse]);
 
   return <></>;
 }
@@ -150,6 +190,7 @@ export const AppNavigator = observer(function AppNavigator(): React.JSX.Element 
   const prerenderComplete = useMenuPreloadStore(s => s.prerenderComplete);
   const adminUnlockVisible = useAdminAccessStore(s => s.unlockVisible);
   const language = localizationStore.currentLanguageCode;
+  const insets = useSafeAreaInsets();
 
   const waitingForMenuPrerender =
     Boolean(session) &&
@@ -158,6 +199,7 @@ export const AppNavigator = observer(function AppNavigator(): React.JSX.Element 
     !prerenderComplete;
   const showBootOverlay = booting || waitingForMenuPrerender;
   const [navigationReady, setNavigationReady] = useState(false);
+  const [currentRouteName, setCurrentRouteName] = useState<string | undefined>();
 
   useEffect(() => {
     if (showBootOverlay) {
@@ -193,6 +235,7 @@ export const AppNavigator = observer(function AppNavigator(): React.JSX.Element 
     Math.round(idleWarningProgress * idleTimerTickCount),
   );
   const timerFontSize = 18;
+  const languageTopOffset = currentRouteName === ROUTES.AdminSettings ? 68 : 10;
 
   return (
     <KioskIdleActivityProvider resetIdle={resetIdle}>
@@ -201,7 +244,13 @@ export const AppNavigator = observer(function AppNavigator(): React.JSX.Element 
           ref={navigationRef}
           linking={linking}
           theme={stackTheme}
-          onReady={() => setNavigationReady(true)}>
+          onReady={() => {
+            setNavigationReady(true);
+            setCurrentRouteName(navigationRef.getCurrentRoute()?.name);
+          }}
+          onStateChange={() => {
+            setCurrentRouteName(navigationRef.getCurrentRoute()?.name);
+          }}>
       <View
         style={styles.navTouchRoot}
         collapsable={false}
@@ -380,6 +429,11 @@ export const AppNavigator = observer(function AppNavigator(): React.JSX.Element 
       {session ? <DeepLinkBridge /> : null}
       </View>
         </NavigationContainer>
+      <View
+        style={[styles.languageOverlay, {top: insets.top + languageTopOffset}]}
+        pointerEvents="box-none">
+        <LanguageSelector compact style={styles.globalLanguageSelector} />
+      </View>
       {showBootOverlay ? (
         <View style={styles.bootOverlay} pointerEvents="auto">
           <ActivityIndicator size="large" color={theme.color.accentPrimary} />
@@ -396,6 +450,16 @@ const styles = StyleSheet.create({
   },
   navTouchRoot: {
     flex: 1,
+  },
+  languageOverlay: {
+    position: 'absolute',
+    right: 14,
+    zIndex: 20,
+    elevation: 20,
+  },
+  globalLanguageSelector: {
+    marginTop: 0,
+    marginRight: 0,
   },
   idleTimerRing: {
     alignItems: 'center',
